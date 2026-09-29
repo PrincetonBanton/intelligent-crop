@@ -1,7 +1,14 @@
+<template>
+  <MainHub />
+</template>
+
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+import MainHub from './views/MainHub.vue';
 </script>
 
-<template>
-  <HelloWorld />
-</template>
+<style>
+body {
+  margin: 0;
+  background-color: #f8fafc;
+}
+</style>
