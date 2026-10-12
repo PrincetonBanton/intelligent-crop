@@ -36,99 +36,18 @@
       </div>
     </div>
 
-    <!-- Authenticated Dashboard Workspace -->
+    <!-- Authenticated Mainhub Workspace -->
     <div v-else class="main-container">
-      <aside class="sidebar">
-        <nav class="nav-menu">
-          <a 
-            class="nav-item" 
-            :class="{ active: currentTab === 'dashboard' }" 
-            @click="currentTab = 'dashboard'"
-          >
-            Dashboard
-          </a>
-          <a 
-            class="nav-item" 
-            :class="{ active: currentTab === 'farm-setup' }" 
-            @click="currentTab = 'farm-setup'"
-          >
-            Farm Setup
-          </a>
-          <a 
-            class="nav-item" 
-            :class="{ active: currentTab === 'supervisors' }" 
-            @click="currentTab = 'supervisors'"
-          >
-            Supervisors
-          </a>
-          <a 
-            class="nav-item" 
-            :class="{ active: currentTab === 'blocks' }" 
-            @click="currentTab = 'blocks'"
-          >
-            Blocks
-          </a>
-          <a @click="handleSignOut" class="nav-item logout">Sign Out</a>
-        </nav>
-      </aside>
+      <SidebarNav 
+        :currentTab="currentTab" 
+        @update:currentTab="currentTab = $event"
+        @reset-farm="handleResetFarm"
+        @signOut="handleSignOut" 
+      />
 
       <main class="workspace">
-        <!-- Dashboard View -->
-        <div v-if="currentTab === 'dashboard'" class="tab-view">
-          <h2>Dashboard</h2>
-        </div>
-
-        <!-- Farm Setup View -->
-        <div v-else-if="currentTab === 'farm-setup'" class="tab-view">
-          <div class="workspace-header">
-            <h2>1. Farm Setup</h2>
-          </div>
-
-          <div class="form-container">
-            <form @submit.prevent="handleSaveFarm" class="farm-form">
-              <div class="form-group">
-                <label>Farm Name</label>
-                <input v-model="farmForm.name" placeholder="e.g. Central Plantation" required />
-              </div>
-              <div class="form-group">
-                <label>Location</label>
-                <input v-model="farmForm.location" placeholder="e.g. Davao City" required />
-              </div>
-              <div class="form-group">
-                <label>Total Hectarage (Ha)</label>
-                <input v-model="farmForm.total_hectarage" type="number" step="0.01" placeholder="e.g. 25.5" required />
-              </div>
-              <div class="form-group">
-                <label>Primary Crop</label>
-                <input v-model="farmForm.primary_crop" placeholder="e.g. Pomelo" required />
-              </div>
-              <button type="submit" :disabled="saving" class="btn-primary">
-                {{ saving ? 'Saving...' : 'Save Farm Entity' }}
-              </button>
-            </form>
-
-            <div class="list-container">
-              <h3>Registered Farms</h3>
-              <ul v-if="farms.length > 0" class="farm-list">
-                <li v-for="f in farms" :key="f.id" class="farm-item">
-                  <strong>{{ f.name }}</strong> ({{ f.primary_crop }})
-                  <span>{{ f.location }} • {{ f.total_hectarage }} Ha</span>
-                </li>
-              </ul>
-              <p v-else class="empty-msg">No farms registered yet.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Supervisors View -->
-        <div v-else-if="currentTab === 'supervisors'" class="tab-view">
-          <h2>Supervisors</h2>
-        </div>
-
-        <!-- Blocks View -->
-        <div v-else-if="currentTab === 'blocks'" class="tab-view">
-          <h2>Blocks</h2>
-        </div>
+        <DashboardView v-if="currentTab === 'dashboard'" />
+        <FarmView ref="farmViewRef" v-else-if="currentTab === 'farm-setup'" />
       </main>
     </div>
   </div>
@@ -136,6 +55,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import SidebarNav from '../components/SidebarNav.vue';
+import DashboardView from './DashboardView.vue';
+import FarmView from './FarmView.vue';
 import { authService } from '../services/authService.js';
 import { farmService } from '../services/farmService.js';
 
@@ -144,12 +66,9 @@ const email = ref('');
 const password = ref('');
 const isSignUp = ref(false);
 const loading = ref(false);
-
 const currentTab = ref('dashboard');
-
-const saving = ref(false);
 const farms = ref([]);
-const farmForm = ref({ name: '', location: '', total_hectarage: '', primary_crop: '' });
+const farmViewRef = ref(null);
 
 async function checkSession() {
   try {
@@ -169,16 +88,11 @@ async function loadFarms() {
   }
 }
 
-async function handleSaveFarm() {
-  saving.value = true;
-  try {
-    await farmService.createFarm(farmForm.value, currentUser.value.id);
-    farmForm.value = { name: '', location: '', total_hectarage: '', primary_crop: '' };
-    await loadFarms();
-  } catch (err) {
-    alert('Error saving farm: ' + err.message);
-  } finally {
-    saving.value = false;
+function handleResetFarm() {
+  currentTab.value = 'farm-setup';
+  // Safely trigger child view state reset if mounted
+  if (farmViewRef.value && typeof farmViewRef.value.resetView === 'function') {
+    farmViewRef.value.resetView();
   }
 }
 
@@ -219,7 +133,7 @@ onMounted(() => {
 
 <style scoped>
 .app-layout { display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; background: #f8fafc; color: #0f172a; }
-.topbar { height: 56px; background: #ffffff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; }
+.topbar { height: 56px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; }
 .brand-zone { display: flex; align-items: center; gap: 12px; }
 .logo-box { width: 32px; height: 32px; background: #16a34a; color: #fff; font-weight: 800; font-size: 0.85rem; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
 .app-title { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; }
@@ -230,7 +144,7 @@ onMounted(() => {
 .online .dot { background: #10b981; }
 .offline .dot { background: #ef4444; }
 .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; background: #f1f5f9; }
-.auth-card { width: 340px; padding: 28px; background: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; flex-direction: column; gap: 16px; }
+.auth-card { width: 340px; padding: 28px; background: #fff; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; flex-direction: column; gap: 16px; }
 .auth-card h3 { margin: 0; font-size: 1.2rem; color: #0f172a; }
 .form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-group label { font-size: 0.8rem; font-weight: 600; color: #475569; }
@@ -240,20 +154,5 @@ onMounted(() => {
 .toggle-text { font-size: 0.8rem; color: #64748b; margin: 0; text-align: center; }
 .toggle-text a { color: #16a34a; font-weight: 600; cursor: pointer; text-decoration: underline; }
 .main-container { display: flex; flex: 1; overflow: hidden; }
-.sidebar { width: 220px; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 16px 12px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; }
-.nav-menu { display: flex; flex-direction: column; gap: 4px; }
-.nav-item { padding: 10px 12px; border-radius: 6px; font-size: 0.875rem; font-weight: 500; color: #64748b; cursor: pointer; text-decoration: none; }
-.nav-item:hover, .nav-item.active { background: #f1f5f9; color: #0f172a; font-weight: 600; }
-.nav-item.logout { color: #dc2626; margin-top: auto; }
 .workspace { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-.tab-view { display: flex; flex-direction: column; gap: 16px; }
-.tab-view h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b; text-align: left; }
-.workspace-header h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b; text-align: left; }
-.form-container { display: grid; grid-template-columns: 320px 1fr; gap: 24px; background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
-.farm-form { display: flex; flex-direction: column; gap: 12px; }
-.list-container h3 { margin: 0 0 12px 0; font-size: 1rem; color: #1e293b; }
-.farm-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-.farm-item { padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; flex-direction: column; font-size: 0.875rem; background: #f8fafc; }
-.farm-item span { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
-.empty-msg { color: #94a3b8; font-size: 0.875rem; }
 </style>
