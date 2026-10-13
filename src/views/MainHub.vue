@@ -48,6 +48,7 @@
       <main class="workspace">
         <DashboardView v-if="currentTab === 'dashboard'" />
         <FarmView ref="farmViewRef" v-else-if="currentTab === 'farm-setup'" />
+        <IPMView v-else-if="currentTab === 'ipm-setup'" />
       </main>
     </div>
   </div>
@@ -58,6 +59,7 @@ import { ref, onMounted } from 'vue';
 import SidebarNav from '../components/SidebarNav.vue';
 import DashboardView from './DashboardView.vue';
 import FarmView from './FarmView.vue';
+import IPMView from './IPMView.vue';
 import { authService } from '../services/authService.js';
 import { farmService } from '../services/farmService.js';
 
@@ -90,7 +92,6 @@ async function loadFarms() {
 
 function handleResetFarm() {
   currentTab.value = 'farm-setup';
-  // Safely trigger child view state reset if mounted
   if (farmViewRef.value && typeof farmViewRef.value.resetView === 'function') {
     farmViewRef.value.resetView();
   }

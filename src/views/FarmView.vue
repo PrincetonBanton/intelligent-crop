@@ -116,16 +116,7 @@ async function handleCreateFarm(formData) {
 }
 
 function handleCardClick(farm) {
-  const details = [
-    `🏞️ Farm Enterprise Profile:`,
-    `- Designation: ${farm.name}`,
-    `- Region: ${farm.location || 'N/A'}`,
-    `- Total Hectarage: ${farm.total_hectarage} Ha`,
-    `- Primary Cultivation: ${farm.primary_crop || 'None'}`,
-    `- Registration Timestamp: ${farm.created_at ? new Date(farm.created_at).toLocaleString() : 'N/A'}`
-  ].join('\n');
-  
-  alert(details);
+  // Alert popup removed; direct navigation to block drill-down
   selectedFarm.value = farm;
 }
 

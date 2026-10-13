@@ -12,9 +12,14 @@
         <span v-if="!isCollapsed" class="nav-label">Dashboard</span>
       </a>
 
-      <a class="nav-item" :class="{ active: currentTab === 'farm-setup' }" @click="$emit('reset-farm')" title="Farm Setup">
+      <a class="nav-item" :class="{ active: currentTab === 'farm-setup' }" @click="handleFarmSetupClick" title="Farm Setup">
         <span class="nav-icon">🌱</span>
         <span v-if="!isCollapsed" class="nav-label">Farm Setup</span>
+      </a>
+
+      <a class="nav-item" :class="{ active: currentTab === 'ipm-setup' }" @click="handleIpmSetupClick" title="IPM Inventory">
+        <span class="nav-icon">🧪</span>
+        <span v-if="!isCollapsed" class="nav-label">IPM Setup</span>
       </a>
 
       <a class="nav-item logout" @click="$emit('signOut')" title="Sign Out">
@@ -27,14 +32,42 @@
 
 <script setup>
 import { ref } from 'vue';
+import { authService } from '../services/authService.js';
+import { ROLES } from '../utils/permissions.js';
 
 defineProps({
   currentTab: { type: String, required: true }
 });
 
-defineEmits(['update:currentTab', 'reset-farm', 'signOut']);
-
+const emit = defineEmits(['update:currentTab', 'reset-farm', 'signOut']);
 const isCollapsed = ref(false);
+
+async function checkPermission() {
+  try {
+    const user = await authService.getCurrentUser() || { role: 'owner' };
+    const role = (user.role || 'owner').toLowerCase();
+    if (role === ROLES.OWNER || role === ROLES.MANAGER) {
+      return true;
+    } else {
+      alert(`Role: ${role.toUpperCase()} — Not allowed (Restricted to Owners and Managers)`);
+      return false;
+    }
+  } catch (err) {
+    return true; // fallback
+  }
+}
+
+async function handleFarmSetupClick() {
+  if (await checkPermission()) {
+    emit('reset-farm');
+  }
+}
+
+async function handleIpmSetupClick() {
+  if (await checkPermission()) {
+    emit('update:currentTab', 'ipm-setup');
+  }
+}
 </script>
 
 <style scoped>

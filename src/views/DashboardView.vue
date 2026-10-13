@@ -3,7 +3,6 @@
     <!-- View Header with Farm Selector Dropdown -->
     <div class="view-header">
       <div class="list-header">
-        <h2>Operational Dashboard</h2>
         <select v-model="selectedFarmId" @change="onFarmChange" class="farm-dropdown-main">
           <option value="" disabled>-- Select Plantation Unit --</option>
           <option v-for="farm in farms" :key="farm.id" :value="farm.id">
