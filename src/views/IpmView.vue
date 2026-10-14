@@ -12,10 +12,9 @@
           placeholder="Filter Group, MoA, or Sub-group..." 
           class="search-input"
         />
-        <!-- Toggle Button for Active Ingredients Reference (Moved to Right) -->
-        <button @click="showModal = true" class="btn-primary"><span>+</span> Register Chemical</button>
+        <button @click="handleAddInputsClick" class="btn-primary"><span>+</span> Add Inputs</button>
         <button @click="showActiveIngredients = !showActiveIngredients" class="btn-secondary-toggle">
-          {{ showActiveIngredients ? 'Hide AI' : 'Show AI' }}
+          {{ showActiveIngredients ? 'Hide Generic' : 'Show AI' }}
         </button>
       </div>
     </div>
@@ -56,27 +55,32 @@
                     </div>
                   </td>
 
-                  <!-- Brand Name and AI -->
+                  <!-- Brand Name, AI, and Type Badge -->
                   <td>
                     <div class="column-content">
-                      <!-- Registered Commercial Brands -->
+
                       <div class="brands-section">
-                        <span class="section-label">Registered Brands:</span>
                         <div v-if="getMappedBrands(sub.subGroup).length > 0" class="brand-tags">
-                          <span 
-                            v-for="brand in getMappedBrands(sub.subGroup)" 
-                            :key="brand.id" 
-                            class="brand-tag"
-                          >
-                            {{ brand.trade_name }} <small>({{ brand.active_ingredient }})</small>
+
+                        <!-- Inside your IPMView.vue template where the brand tags are rendered -->
+                        <span 
+                          v-for="brand in getMappedBrands(sub.subGroup)" 
+                          :key="brand.id" 
+                          class="brand-tag clickable-tag"
+                          @click="handleBrandClick(brand)"
+                        >
+                          <span class="brand-name">{{ brand.trade_name }}</span>
+                          <small class="brand-ai">({{ brand.active_ingredient }})</small>
+                          <span :class="['type-badge', getTypeClass(brand.application_type)]">
+                            {{ brand.application_type || 'Contact' }}
                           </span>
+                        </span>
                         </div>
-                        <span v-else class="empty-brand-slot">No commercial brands encoded yet</span>
+                        <span v-else class="empty-brand-slot">NA</span>
                       </div>
 
                       <!-- Official IRAC Active Ingredients Reference (Toggled) -->
                       <div v-if="showActiveIngredients" class="ai-reference-section">
-                        <span class="section-label ai-label">Official IRAC Active Ingredients:</span>
                         <div class="ai-chips">
                           <span 
                             v-for="(ai, idx) in sub.activeIngredients" 
@@ -104,34 +108,57 @@
       </div>
     </div>
 
-    <!-- Registration Modal -->
-    <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>Register Chemical Input</h3>
-          <button @click="showModal = false" class="btn-close">✕</button>
-        </div>
-        <p class="modal-desc">
-          Select an active ingredient to automatically map your commercial trade product to its official IRAC Group.
-        </p>
-        <div class="modal-actions">
-          <button @click="showModal = false" class="btn-secondary">Close</button>
-        </div>
-      </div>
-    </div>
+    <AddInputModal 
+        :is-open="showAddModal" 
+        @close="showAddModal = false" 
+        @saved="fetchData" 
+    />
+
+    <!-- View Chemical Details & Calculator Modal -->
+    <ViewChemicalModal 
+      :isOpen="isViewModalOpen" 
+      :chemical="selectedChemical" 
+      @close="isViewModalOpen = false"
+    />
+
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { supabase } from '../providers/supabaseProvider.js';
+import AddInputModal from '../components/modals/AddInputModal.vue';
+import ViewChemicalModal from '../components/modals/ViewChemicalModal.vue';
 
 const searchQuery = ref('');
-const showModal = ref(false);
-const showActiveIngredients = ref(false); // Toggle state
-const loading = ref(true);
+const showActiveIngredients = ref(false);
+const loading = ref(true);  
 const iracMasterData = ref([]);
 const registeredChemicals = ref([]);
+
+// View Modal States
+const isViewModalOpen = ref(false);
+const selectedChemical = ref(null);
+
+function handleBrandClick(brand) {
+  selectedChemical.value = brand;
+  isViewModalOpen.value = true;
+}
+
+const showAddModal = ref(false);
+function handleAddInputsClick() {
+  showAddModal.value = true;
+}
+
+function getTypeClass(type) {
+  if (!type) return 'badge-contact';
+  const val = type.toLowerCase();
+  if (val.includes('systemic') && val.includes('translaminar')) return 'badge-systrans';
+  if (val.includes('systemic') && val.includes('contact')) return 'badge-dual';
+  if (val.includes('systemic')) return 'badge-systemic';
+  if (val.includes('translaminar')) return 'badge-translaminar';
+  return 'badge-contact';
+}
 
 async function fetchData() {
   loading.value = true;
@@ -163,7 +190,7 @@ const groupedIracData = computed(() => {
   
   const filtered = iracMasterData.value.filter(item => {
     if (!q) return true;
-    const brands = getMappedBrands(item.sub_group).map(b => b.trade_name + ' ' + b.active_ingredient).join(' ').toLowerCase();
+    const brands = getMappedBrands(item.sub_group).map(b => `${b.trade_name} ${b.active_ingredient} ${b.application_type || ''}`).join(' ').toLowerCase();
     const ais = (item.active_ingredients || []).join(' ').toLowerCase();
     return (
       item.irac_group.toLowerCase().includes(q) ||
@@ -195,7 +222,6 @@ const groupedIracData = computed(() => {
     }
   });
 
-  // Convert map to array and sort numerically by group
   return Array.from(groupMap.values()).sort((a, b) => {
     const getNum = (val) => {
       const cleaned = val.replace(/[^0-9]/g, '');
@@ -249,29 +275,34 @@ onMounted(() => {
 .subgroup-name { color: #000000; font-weight: 500; }
 
 .column-content { display: flex; flex-direction: column; gap: 8px; }
-.brands-section { display: flex; flex-direction: column; gap: 4px; }
-.section-label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; }
 
-.brand-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.brand-tag { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-.brand-tag small { color: #15803d; font-weight: 500; }
+.brand-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.brand-tag { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.brand-name { color: #0f172a; font-weight: 700; }
+.brand-ai { color: #15803d; font-weight: 500; }
+
+/* Application Type Badges */
+.type-badge { font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+.badge-systemic { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.badge-contact { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.badge-translaminar { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+.badge-systrans { background: #ccfbf1; color: #115e59; border: 1px solid #99f6e4; }
+.badge-dual { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+
 .empty-brand-slot { font-size: 0.75rem; color: #94a3b8; font-style: italic; }
 
 .ai-reference-section { display: flex; flex-direction: column; gap: 4px; padding-top: 6px; border-top: 1px dashed #cbd5e1; }
-.ai-label { color: #475569; }
 .ai-chips { display: flex; flex-wrap: wrap; gap: 3px; }
 .ai-chip { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; }
 
 .no-results { text-align: center; color: #000000; padding: 24px 0; }
 
-/* Modal Styles */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
-.modal-card { background: #fff; border-radius: 6px; width: 100%; max-width: 440px; padding: 20px; border: 1px solid #cbd5e1; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08); color: #000000; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.modal-header h3 { margin: 0; font-size: 1.1rem; color: #000000; font-weight: 700; }
-.modal-desc { font-size: 0.85rem; color: #000000; opacity: 0.8; margin-bottom: 16px; }
-.btn-close { background: none; border: none; font-size: 1rem; color: #000000; cursor: pointer; padding: 4px; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
-.btn-secondary { padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: 1px solid #cbd5e1; background: #f1f5f9; color: #000000; }
-.btn-secondary:hover { background: #e2e8f0; }
+.brand-tag.clickable-tag {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.brand-tag.clickable-tag:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
 </style>
