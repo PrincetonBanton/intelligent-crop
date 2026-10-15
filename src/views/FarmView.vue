@@ -2,45 +2,65 @@
   <div class="farm-view">
     <!-- Switch between Farm Root View and Farm Block View -->
     <template v-if="!selectedFarm">
-      <!-- 1. Header Section -->
+      <!-- Header Section -->
       <div class="view-header">
         <div class="list-header">
           <h3>Registered Plantation Units</h3>
-          <span class="badge" v-if="farms.length > 0">{{ farms.length }} Available</span>
+          <span class="badge" v-if="farms.length > 0">{{ farms.length }} Active</span>
         </div>
         <div class="header-actions">
           <div class="role-switcher">
-            <button @click="onAddFarmClick" class="btn-primary"><span>+</span> Add Farm</button>
+            <span class="role-label">Role:</span>
             <select v-model="testRole" @change="updateActiveRole" class="role-dropdown">
               <option value="owner">👑 Owner</option>
               <option value="manager">📊 Manager</option>
               <option value="supervisor">👷 Supervisor</option>
             </select>
           </div>
+          <button @click="onAddFarmClick" class="btn-primary">+ Add Farm</button>
         </div>
       </div>
 
-      <!-- 2. Card Grid Section -->
-      <div class="card list-card">
+      <!-- Card Grid Section -->
+      <div class="card-container">
         <div v-if="loading" class="state-msg">Scanning database...</div>
+        
         <div v-else-if="farms.length === 0" class="state-msg empty">
-          <p>There is no farm configured.</p>
-          <small>Click "Add Farm" to create your first root entity (e.g. B1, B2).</small>
+          <p class="empty-title">There is no farm configured.</p>
+          <small>Click "Add Farm" to create your first root entity.</small>
         </div>
 
         <div v-else class="farms-grid">
-          <div v-for="(farm, index) in farms" :key="farm.id" :class="['farm-card-circle', getThemeClass(index)]" @click="handleCardClick(farm)">
-            <button @click.stop="handleDelete(farm)" class="btn-danger-icon" title="Delete Farm">🗑️</button>
-            
-            <div class="circle-content">
-              <strong class="farm-name">{{ farm.name }}</strong>
-              <span class="location-text">{{ farm.location || 'Region Unassigned' }}</span>
-              
-              <div class="farm-details-stack">
-                <span class="detail-row"><b>Area:</b> {{ farm.total_hectarage }} Ha</span>
-                <span class="detail-row"><b>Crop:</b> {{ farm.primary_crop || 'Multi-Crop' }}</span>
-                <span class="detail-row"><b>Status:</b> Operational</span>
+          <div 
+            v-for="(farm, index) in farms" 
+            :key="farm.id" 
+            :class="['farm-profile-card', getThemeClass(index)]" 
+            @click="handleCardClick(farm)"
+          >
+            <!-- Top Accent Banner with Title, Location, and Delete Action -->
+            <div class="card-banner">
+              <div class="banner-title-group">
+                <h4 class="farm-name" :title="farm.name">{{ farm.name }}</h4>
+                <span class="location-text">{{ farm.location || 'Region Unassigned' }}</span>
               </div>
+              <button @click.stop="handleDelete(farm)" class="btn-danger-icon" title="Delete Farm">🗑️</button>
+            </div>
+
+            <!-- Profile Details Stack -->
+            <div class="profile-body">
+              <div class="metric-item">
+                <span class="metric-label">Area</span>
+                <span class="metric-value"><b>{{ farm.total_hectarage || 0 }}</b> Ha</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Crop</span>
+                <span class="metric-value">{{ farm.primary_crop || 'Multi-Crop' }}</span>
+              </div>
+            </div>
+
+            <!-- Card Footer Link -->
+            <div class="card-footer">
+              <span class="view-link">Explore Blocks &rarr;</span>
             </div>
           </div>
         </div>
@@ -70,7 +90,6 @@ const currentUser = ref(null);
 const testRole = ref('owner');
 const selectedFarm = ref(null);
 
-// Exactly 6 distinct color themes
 const themes = ['theme-green', 'theme-yellow', 'theme-pink', 'theme-blue', 'theme-purple', 'theme-amber'];
 function getThemeClass(index) { return themes[index % themes.length]; }
 
@@ -115,10 +134,7 @@ async function handleCreateFarm(formData) {
   finally { saving.value = false; }
 }
 
-function handleCardClick(farm) {
-  // Alert popup removed; direct navigation to block drill-down
-  selectedFarm.value = farm;
-}
+function handleCardClick(farm) { selectedFarm.value = farm; }
 
 async function handleDelete(farm) {
   if (!currentUser.value) currentUser.value = await authService.getCurrentUser() || { role: testRole.value };
@@ -131,46 +147,54 @@ async function handleDelete(farm) {
   try {
     await farmService.deleteFarm(farm.id);
     await loadFarms();
-  } catch (err) {
-    alert('Failed to delete farm: ' + err.message);
-  }
+  } catch (err) { alert('Failed to delete farm: ' + err.message); }
 }
 
 onMounted(async () => { await loadCurrentUser(); await loadFarms(); });
 </script>
 
 <style scoped>
-.farm-view{display:flex;flex-direction:column;gap:20px;text-align:left;background:#fff}
-.view-header,.list-header,.header-actions,.role-switcher{display:flex;justify-content:space-between;align-items:center}
-.view-header{border-bottom:1px solid #f1f5f9;padding-bottom:12px}
-.card{background:#fff;padding:0}.badge{background:#ecfdf5;color:#047857;font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:12px}
-.btn-primary{padding:8px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:4px;box-shadow:0 2px 4px rgba(22,163,74,0.2)}
-.btn-primary:hover{background:#15803d}.state-msg{color:#64748b;font-size:0.85rem;padding:24px 0;text-align:center}
-.farms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;align-items:center}
-.farm-card-circle{width:300px;height:300px;border-radius:50%;border:2px solid #64748b;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px;text-align:center;position:relative;cursor:pointer;box-shadow:0 10px 25px -5px rgba(0,0,0,0.08);transition:all 0.25s ease;margin:0 auto}
-.farm-card-circle:hover{transform:translateY(-4px);border-color:#0f172a;box-shadow:0 20px 30px -10px rgba(0,0,0,0.15)}
-.circle-content{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
+/* Main Layout & Header */
+.farm-view { display: flex; flex-direction: column; gap: 20px; text-align: left; background: #f8fafc; padding: 20px; border-radius: 12px; }
+.view-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; flex-wrap: wrap; gap: 12px; }
+.list-header, .header-actions, .role-switcher { display: flex; align-items: center; gap: 8px; }
+.list-header h3 { margin: 0; font-size: 1.15rem; color: #0f172a; font-weight: 700; }
+.badge { background: #ecfdf5; color: #047857; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 30px; border: 1px solid #a7f3d0; }
+.role-switcher { background: #fff; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.75rem; color: #475569; font-weight: 600; }
+.role-dropdown { background: transparent; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; outline: none; }
+.btn-primary { padding: 8px 14px; background: #16a34a; color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: background 0.2s; }
+.btn-primary:hover { background: #15803d; }
 
-/* All card text details set strictly to solid black */
-.farm-name,.location-text,.detail-row{color:#000000;text-shadow:0 1px 1px rgba(255,255,255,0.4)}
-.farm-name{font-size:1.3rem;font-weight:800;max-width:210px;overflow:visible;text-overflow:clip;word-break:break-word;line-height:1.2}
-.location-text{font-size:0.85rem;font-weight:600;max-width:210px;overflow:visible;text-overflow:clip;word-break:break-word;margin-bottom:4px}
-.btn-danger-icon{position:absolute;top:50px;right:52px;background:#ffffff;border:1px solid #fecaca;color:#ef4444;width:30px;height:30px;border-radius:50%;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.2s;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
-.btn-danger-icon:hover{background:#fee2e2;transform:scale(1.1)}
-.farm-card-circle:hover .btn-danger-icon{opacity:1}
+/* Grid & Cards */
+.farms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.farm-profile-card { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+.farm-profile-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px -4px rgba(0,0,0,0.06); border-color: #cbd5e1; }
 
-/* Inner dark background removed; transparent clean layout */
-.farm-details-stack{display:flex;flex-direction:column;gap:2px;background:transparent;padding:4px 16px;border-radius:0;font-size:0.8rem;width:210px;text-align:left;box-sizing:border-box}
-.detail-row{overflow:visible;text-overflow:clip;word-break:break-word;line-height:1.3}
+/* Banner Section with Details */
+.card-banner { padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.banner-title-group { display: flex; flex-direction: column; min-width: 0; }
+.farm-name { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.location-text { font-size: 0.75rem; color: #475569; margin-top: 2px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn-danger-icon { background: rgba(255, 255, 255, 0.8); border: 1px solid #fee2e2; color: #ef4444; width: 24px; height: 24px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.btn-danger-icon:hover { background: #fee2e2; }
 
-/* 6 Streamlined Theme Color Palettes */
-.theme-green{background:linear-gradient(145deg,#f0fdf4,#dcfce7)}
-.theme-yellow{background:linear-gradient(145deg,#fefce8,#fef08a)}
-.theme-pink{background:linear-gradient(145deg,#fdf2f8,#fbcfe8)}
-.theme-blue{background:linear-gradient(145deg,#eff6ff,#bfdbfe)}
-.theme-purple{background:linear-gradient(145deg,#fdf4ff,#e9d5ff)}
-.theme-amber{background:linear-gradient(145deg,#fffbeb,#fde68a)}
+/* Card Content Sections */
+.profile-body { padding: 10px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f8fafc; border-top: 1px solid rgba(0, 0, 0, 0.05); border-bottom: 1px solid #f1f5f9; }
+.metric-item { display: flex; flex-direction: column; }
+.metric-label { font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+.metric-value { font-size: 0.85rem; color: #1e293b; font-weight: 600; margin-top: 2px; }
+.card-footer { padding: 8px 14px; text-align: right; background: #fff; margin-top: auto; }
+.view-link { font-size: 0.75rem; font-weight: 600; color: #16a34a; }
 
-.role-switcher{gap:6px;background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:0.75rem;font-weight:600;color:#334155}
-.role-dropdown{background:#fff;border:none;border-radius:6px;padding:4px 6px;font-size:0.75rem;font-weight:600;cursor:pointer;outline:none}
+/* Color Banners */
+.theme-green .card-banner { background: #dcfce7; }
+.theme-yellow .card-banner { background: #fef08a; }
+.theme-pink .card-banner { background: #fbcfe8; }
+.theme-blue .card-banner { background: #bfdbfe; }
+.theme-purple .card-banner { background: #e9d5ff; }
+.theme-amber .card-banner { background: #fde68a; }
+
+/* Empty & Loading States */
+.state-msg { color: #64748b; font-size: 0.85rem; padding: 40px 0; text-align: center; }
+.empty-title { font-size: 0.95rem; font-weight: 600; color: #334155; margin: 0 0 4px; }
 </style>

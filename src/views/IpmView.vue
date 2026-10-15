@@ -2,17 +2,10 @@
   <div class="ipm-view">
     <!-- View Header -->
     <div class="view-header">
-      <div>
-        <h2>IRAC Insecticide Resistance Management</h2>
-      </div>
+      <h2>IRAC Insecticide Resistance Management</h2>
       <div class="header-actions">
-        <input 
-          v-model="searchQuery" 
-          type="text" 
-          placeholder="Filter Group, MoA, or Sub-group..." 
-          class="search-input"
-        />
-        <button @click="handleAddInputsClick" class="btn-primary"><span>+</span> Add Inputs</button>
+        <input v-model="searchQuery" type="text" placeholder="Filter Group, MoA, or Sub-group..." class="search-input" />
+        <button @click="handleAddInputsClick" class="btn-primary">+ Add Inputs</button>
         <button @click="showActiveIngredients = !showActiveIngredients" class="btn-secondary-toggle">
           {{ showActiveIngredients ? 'Hide Generic' : 'Show AI' }}
         </button>
@@ -25,10 +18,10 @@
         <table class="irac-table">
           <thead>
             <tr>
-              <th style="width: 8%;">Group</th>
-              <th style="width: 25%;">Mode of Action</th>
-              <th style="width: 22%;">Subgroup Class</th>
-              <th style="width: 45%;">Brand Name and AI</th>
+              <th style="width: 5%;">Group</th>
+              <th style="width: 20%;">Mode of Action</th>
+              <th style="width: 25%;">Subgroup Class</th>
+              <th style="width: 50%;">Brand Name and AI</th>
             </tr>
           </thead>
           <tbody>
@@ -39,15 +32,9 @@
             <template v-else v-for="groupObj in groupedIracData" :key="groupObj.group">
               <template v-for="(sub, subIndex) in groupObj.subGroups" :key="sub.subGroup">
                 <tr :class="{ 'group-bottom-border': subIndex === groupObj.subGroups.length - 1 }">
-                  <!-- Row-span Group and Action cells -->
-                  <td v-if="subIndex === 0" :rowspan="groupObj.subGroups.length" class="group-cell">
-                    <strong>{{ groupObj.group }}</strong>
-                  </td>
-                  <td v-if="subIndex === 0" :rowspan="groupObj.subGroups.length" class="action-cell">
-                    <strong>{{ groupObj.actionType }}</strong>
-                  </td>
+                  <td v-if="subIndex === 0" :rowspan="groupObj.subGroups.length" class="group-cell">{{ groupObj.group }}</td>
+                  <td v-if="subIndex === 0" :rowspan="groupObj.subGroups.length" class="action-cell">{{ groupObj.actionType }}</td>
 
-                  <!-- Subgroup Class -->
                   <td>
                     <div class="subgroup-cell">
                       <span class="subgroup-code">{{ sub.subGroup }}</span>
@@ -55,43 +42,30 @@
                     </div>
                   </td>
 
-                  <!-- Brand Name, AI, and Type Badge -->
                   <td>
                     <div class="column-content">
-
                       <div class="brands-section">
                         <div v-if="getMappedBrands(sub.subGroup).length > 0" class="brand-tags">
-
-                        <!-- Inside your IPMView.vue template where the brand tags are rendered -->
-                        <span 
-                          v-for="brand in getMappedBrands(sub.subGroup)" 
-                          :key="brand.id" 
-                          class="brand-tag clickable-tag"
-                          @click="handleBrandClick(brand)"
-                        >
-                          <span class="brand-name">{{ brand.trade_name }}</span>
-                          <small class="brand-ai">({{ brand.active_ingredient }})</small>
-                          <span :class="['type-badge', getTypeClass(brand.application_type)]">
-                            {{ brand.application_type || 'Contact' }}
+                          <span 
+                            v-for="brand in getMappedBrands(sub.subGroup)" 
+                            :key="brand.id" 
+                            class="brand-tag clickable-tag"
+                            @click="handleBrandClick(brand)"
+                          >
+                            <span class="brand-name">{{ brand.trade_name }}</span>
+                            <small class="brand-ai">({{ brand.active_ingredient }})</small>
+                            <span :class="['type-badge', getTypeClass(brand.application_type)]">
+                              {{ brand.application_type || 'Contact' }}
+                            </span>
                           </span>
-                        </span>
                         </div>
                         <span v-else class="empty-brand-slot">NA</span>
                       </div>
 
-                      <!-- Official IRAC Active Ingredients Reference (Toggled) -->
                       <div v-if="showActiveIngredients" class="ai-reference-section">
                         <div class="ai-chips">
-                          <span 
-                            v-for="(ai, idx) in sub.activeIngredients" 
-                            :key="idx" 
-                            class="ai-chip"
-                          >
-                            {{ ai }}
-                          </span>
-                          <span v-if="!sub.activeIngredients || sub.activeIngredients.length === 0" class="empty-brand-slot">
-                            None listed
-                          </span>
+                          <span v-for="(ai, idx) in sub.activeIngredients" :key="idx" class="ai-chip">{{ ai }}</span>
+                          <span v-if="!sub.activeIngredients || sub.activeIngredients.length === 0" class="empty-brand-slot">None listed</span>
                         </div>
                       </div>
                     </div>
@@ -108,19 +82,8 @@
       </div>
     </div>
 
-    <AddInputModal 
-        :is-open="showAddModal" 
-        @close="showAddModal = false" 
-        @saved="fetchData" 
-    />
-
-    <!-- View Chemical Details & Calculator Modal -->
-    <ViewChemicalModal 
-      :isOpen="isViewModalOpen" 
-      :chemical="selectedChemical" 
-      @close="isViewModalOpen = false"
-    />
-
+    <AddInputModal :is-open="showAddModal" @close="showAddModal = false" @saved="fetchData" />
+    <ViewChemicalModal :isOpen="isViewModalOpen" :chemical="selectedChemical" @close="isViewModalOpen = false" />
   </div>
 </template>
 
@@ -132,11 +95,10 @@ import ViewChemicalModal from '../components/modals/ViewChemicalModal.vue';
 
 const searchQuery = ref('');
 const showActiveIngredients = ref(false);
-const loading = ref(true);  
+const loading = ref(true); 
 const iracMasterData = ref([]);
 const registeredChemicals = ref([]);
 
-// View Modal States
 const isViewModalOpen = ref(false);
 const selectedChemical = ref(null);
 
@@ -146,9 +108,7 @@ function handleBrandClick(brand) {
 }
 
 const showAddModal = ref(false);
-function handleAddInputsClick() {
-  showAddModal.value = true;
-}
+function handleAddInputsClick() { showAddModal.value = true; }
 
 function getTypeClass(type) {
   if (!type) return 'badge-contact';
@@ -170,10 +130,7 @@ async function fetchData() {
 
     if (iracRes.error) throw iracRes.error;
     iracMasterData.value = iracRes.data || [];
-
-    if (!chemRes.error) {
-      registeredChemicals.value = chemRes.data || [];
-    }
+    if (!chemRes.error) registeredChemicals.value = chemRes.data || [];
   } catch (err) {
     console.error('Failed to load data:', err.message);
   } finally {
@@ -187,7 +144,6 @@ function getMappedBrands(subGroupCode) {
 
 const groupedIracData = computed(() => {
   const q = searchQuery.value.trim().toLowerCase();
-  
   const filtered = iracMasterData.value.filter(item => {
     if (!q) return true;
     const brands = getMappedBrands(item.sub_group).map(b => `${b.trade_name} ${b.active_ingredient} ${b.application_type || ''}`).join(' ').toLowerCase();
@@ -206,19 +162,11 @@ const groupedIracData = computed(() => {
   filtered.forEach(item => {
     const groupKey = item.irac_group;
     if (!groupMap.has(groupKey)) {
-      groupMap.set(groupKey, {
-        group: item.irac_group,
-        actionType: item.action_type,
-        subGroups: []
-      });
+      groupMap.set(groupKey, { group: item.irac_group, actionType: item.action_type, subGroups: [] });
     }
     const existing = groupMap.get(groupKey).subGroups;
     if (!existing.some(s => s.subGroup === item.sub_group)) {
-      existing.push({
-        subGroup: item.sub_group,
-        chemicalClass: item.chemical_class,
-        activeIngredients: item.active_ingredients || []
-      });
+      existing.push({ subGroup: item.sub_group, chemicalClass: item.chemical_class, activeIngredients: item.active_ingredients || [] });
     }
   });
 
@@ -227,82 +175,53 @@ const groupedIracData = computed(() => {
       const cleaned = val.replace(/[^0-9]/g, '');
       return cleaned ? parseInt(cleaned, 10) : 999;
     };
-
-    const numA = getNum(a.group);
-    const numB = getNum(b.group);
-
-    if (numA !== numB) {
-      return numA - numB;
-    }
-    return a.group.localeCompare(b.group);
+    const numA = getNum(a.group), numB = getNum(b.group);
+    return numA !== numB ? numA - numB : a.group.localeCompare(b.group);
   });
 });
 
-onMounted(() => {
-  fetchData();
-});
+onMounted(() => { fetchData(); });
 </script>
 
 <style scoped>
-.ipm-view { display: flex; flex-direction: column; gap: 16px; text-align: left; background: #fff; margin: 0; padding: 0; width: 100%; box-sizing: border-box; }
-.view-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; gap: 16px; flex-wrap: wrap; }
-.view-header h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #000000; }
-.header-actions { display: flex; align-items: center; gap: 10px; }
-.search-input { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; width: 220px; outline: none; color: #000000; }
-.search-input:focus { border-color: #16a34a; }
-
-.card { background: #fff; padding: 0; border: none; }
-.btn-primary { padding: 6px 12px; background: #16a34a; color: #fff; border: none; border-radius: 4px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.btn-primary:hover { background: #15803d; }
-
-.btn-secondary-toggle { padding: 6px 12px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.btn-secondary-toggle:hover { background: #e2e8f0; color: #0f172a; }
-
-.table-container { max-height: calc(100vh - 180px); overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 4px; }
-.irac-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; background: #fff; }
-.irac-table th { position: sticky; top: 0; background: #f1f5f9; color: #000000; font-weight: 700; padding: 8px 12px; border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0; z-index: 10; }
-
-.irac-table td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; color: #000000; vertical-align: top; }
-.irac-table tr:hover td { background: #f8fafc; }
-
-.group-bottom-border td { border-bottom: 2px solid #94a3b8 !important; }
-
-.group-cell { text-align: center; background: #f8fafc; font-weight: 800; color: #000000; vertical-align: top; }
-.action-cell { background: #f8fafc; color: #000000; vertical-align: top; }
-
-.subgroup-cell { display: flex; align-items: center; gap: 8px; }
-.subgroup-code { font-weight: 800; color: #000000; min-width: 24px; }
-.subgroup-name { color: #000000; font-weight: 500; }
-
-.column-content { display: flex; flex-direction: column; gap: 8px; }
-
-.brand-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.brand-tag { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
-.brand-name { color: #0f172a; font-weight: 700; }
-.brand-ai { color: #15803d; font-weight: 500; }
-
-/* Application Type Badges */
-.type-badge { font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
-.badge-systemic { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-.badge-contact { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-.badge-translaminar { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
-.badge-systrans { background: #ccfbf1; color: #115e59; border: 1px solid #99f6e4; }
-.badge-dual { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
-
-.empty-brand-slot { font-size: 0.75rem; color: #94a3b8; font-style: italic; }
-
-.ai-reference-section { display: flex; flex-direction: column; gap: 4px; padding-top: 6px; border-top: 1px dashed #cbd5e1; }
-.ai-chips { display: flex; flex-wrap: wrap; gap: 3px; }
-.ai-chip { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; }
-
-.no-results { text-align: center; color: #000000; padding: 24px 0; }
-
-.brand-tag.clickable-tag {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.brand-tag.clickable-tag:hover {
-  background: #dcfce7;
-  border-color: #86efac;
-}
+.ipm-view{display:flex;flex-direction:column;gap:16px;text-align:left;background:#fff;margin:0;padding:0;width:100%;box-sizing:border-box}
+.view-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:12px;gap:16px;flex-wrap:wrap}
+.view-header h2{margin:0;font-size:1.25rem;font-weight:normal;color:#000}
+.header-actions{display:flex;align-items:center;gap:10px}
+.search-input{padding:6px 10px;border:1px solid #cbd5e1;border-radius:4px;font-size:0.85rem;width:220px;outline:none;color:#000;font-weight:normal}
+.search-input:focus{border-color:#16a34a}
+.card{background:#fff;padding:0;border:none}
+.btn-primary{padding:6px 12px;background:#16a34a;color:#fff;border:none;border-radius:4px;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;font-weight:normal}
+.btn-primary:hover{background:#15803d}
+.btn-secondary-toggle{padding:6px 12px;background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;border-radius:4px;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;font-weight:normal}
+.btn-secondary-toggle:hover{background:#e2e8f0;color:#0f172a}
+.table-container{max-height:calc(100vh - 180px);overflow-y:auto;border:1px solid #cbd5e1;border-radius:4px}
+.irac-table{width:100%;border-collapse:collapse;font-size:0.85rem;text-align:left;background:#fff}
+.irac-table th{position:sticky;top:0;background:#f1f5f9;color:#000;font-weight:700;padding:8px 12px;border-bottom:2px solid #cbd5e1;border-right:1px solid #e2e8f0;z-index:10}
+.irac-table td{padding:8px 12px;border-bottom:1px solid #e2e8f0;border-right:1px solid #e2e8f0;color:#000;vertical-align:top;font-weight:normal}
+.irac-table tr:hover td{background:#f8fafc}
+.group-bottom-border td{border-bottom:2px solid #94a3b8!important}
+.group-cell{background:#f8fafc;color:#000;vertical-align:top;font-weight:700}
+.action-cell{background:#f8fafc;color:#000;vertical-align:top;font-weight:normal}
+.subgroup-cell{display:flex;align-items:center;gap:8px}
+.subgroup-code,.subgroup-name{color:#000;font-weight:normal}
+.subgroup-code{min-width:24px}
+.column-content{display:flex;flex-direction:column;gap:8px}
+.brand-tags{display:flex;flex-wrap:wrap;gap:6px}
+.brand-tag{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:3px 8px;border-radius:4px;font-size:0.78rem;display:inline-flex;align-items:center;gap:6px;font-weight:normal}
+.brand-name{color:#0f172a;font-weight:700}
+.brand-ai{color:#15803d;font-weight:normal}
+.type-badge{font-size:0.65rem;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:0.02em;font-weight:normal}
+.badge-systemic{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+.badge-contact{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.badge-translaminar{background:#f3e8ff;color:#6b21a8;border:1px solid #e9d5ff}
+.badge-systrans{background:#ccfbf1;color:#115e59;border:1px solid #99f6e4}
+.badge-dual{background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe}
+.empty-brand-slot{font-size:0.75rem;color:#94a3b8;font-style:italic;font-weight:normal}
+.ai-reference-section{display:flex;flex-direction:column;gap:4px;padding-top:6px;border-top:1px dashed #cbd5e1}
+.ai-chips{display:flex;flex-wrap:wrap;gap:3px}
+.ai-chip{background:#f8fafc;border:1px solid #e2e8f0;color:#334155;padding:1px 5px;border-radius:3px;font-size:0.7rem;font-weight:normal}
+.no-results{text-align:center;color:#000;padding:24px 0;font-weight:normal}
+.brand-tag.clickable-tag{cursor:pointer;transition:all 0.2s ease}
+.brand-tag.clickable-tag:hover{background:#dcfce7;border-color:#86efac}
 </style>
