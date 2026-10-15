@@ -156,4 +156,4 @@ onMounted(loadFarms);
 .theme-blue { background: linear-gradient(145deg, #eff6ff, #bfdbfe); }
 .theme-purple { background: linear-gradient(145deg, #fdf4ff, #e9d5ff); }
 .theme-amber { background: linear-gradient(145deg, #fffbeb, #fde68a); }
-</style>
+</style>  

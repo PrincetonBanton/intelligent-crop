@@ -49,6 +49,7 @@
         <DashboardView v-if="currentTab === 'dashboard'" />
         <FarmView ref="farmViewRef" v-else-if="currentTab === 'farm-setup'" />
         <IPMView v-else-if="currentTab === 'ipm-setup'" />
+        <CropView v-else-if="currentTab === 'crop-setup'" />
       </main>
     </div>
   </div>
@@ -60,6 +61,7 @@ import SidebarNav from '../components/SidebarNav.vue';
 import DashboardView from './DashboardView.vue';
 import FarmView from './FarmView.vue';
 import IPMView from './IPMView.vue';
+import CropView from './CropView.vue';
 import { authService } from '../services/authService.js';
 import { farmService } from '../services/farmService.js';
 
