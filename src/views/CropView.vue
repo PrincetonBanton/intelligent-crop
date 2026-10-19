@@ -1,166 +1,216 @@
 <template>
   <div class="crop-setup-view">
     <div class="view-header">
-      <h2>Crop Setup</h2>
-      <span class="sub-subtitle">Manage crop life cycles, phenological stages, and scheduled chemical application windows.</span>
-    </div>
-
-    <!-- Day 0 Control Bar -->
-    <div class="card control-card">
-      <div class="date-picker-group">
-        <label for="dayZeroDate">Day 0 (Flower Induction Date):</label>
-        <input 
-          id="dayZeroDate"
-          type="date" 
-          v-model="dayZeroDate" 
-          class="form-input-date"
-        />
+      <div>
+        <h2>Crop Setup & Management</h2>
+        <span class="sub-subtitle">Manage baseline orchard crop templates, varieties, and phenological lifecycles.</span>
+      </div>
+      <div class="header-actions">
+        <button @click="showAddModal = true" class="btn-primary">+ Add Crop Template</button>
       </div>
     </div>
 
-    <div class="card content-card">
-      <div class="timeline-container">
-        <!-- Horizontal Timeline Axis -->
-        <div class="timeline-axis-line"></div>
+    <!-- Crop Templates Grid Container -->
+    <div class="content-container">
+      <div v-if="loading" class="no-results">Loading crop templates...</div>
+      
+      <div v-else-if="templates.length === 0" class="empty-state">
+        <p>No crop templates found. Click "+ Add Crop Template" to get started.</p>
+      </div>
 
-        <div class="stages-timeline-grid">
-          <div 
-            v-for="(stage, index) in calculatedStages" 
-            :key="index" 
-            class="timeline-stage-node"
-          >
-            <!-- Chemical Slots positioned above node marker -->
-            <div class="chemical-slots-group">
-              <div v-for="slot in 3" :key="slot" class="chem-slot-placeholder">
-                <span class="slot-text">Input Slot {{ slot }}</span>
-              </div>
+      <div v-else class="crop-grid">
+        <div 
+          v-for="(crop, index) in templates" 
+          :key="crop.id" 
+          :class="['crop-profile-card', getThemeClass(index)]"
+          @click="selectCropForStages(crop)"
+        >
+          <!-- Top Section -->
+          <div class="card-banner">
+            <div class="banner-title-group">
+              <h4 class="crop-name" :title="crop.crop_name">{{ crop.crop_name }}</h4>
+              <span class="variety-text">{{ crop.variety }}</span>
             </div>
+            <button @click.stop="deleteTemplate(crop.id)" class="btn-delete" title="Delete template">✕</button>
+          </div>
 
-            <!-- Timeline Node Marker with Gaps Above and Below -->
-            <div class="node-marker-wrap">
-              <div class="timeline-dot"></div>
+          <!-- Vertical Stacked Details Section -->
+          <div class="profile-body-stacked">
+            <div class="detail-row">
+              <span class="detail-label">Spacing:</span>
+              <span class="detail-value"><b>{{ crop.standard_tree_spacing || 'N/A' }}</b> meters</span>
             </div>
+            <div class="detail-row">
+              <span class="detail-label">Notes:</span>
+              <span class="detail-value desc-text">{{ crop.description || 'No operational notes added.' }}</span>
+            </div>
+          </div>
 
-            <!-- Stage Info Box Uniformly Below Line -->
-            <div class="stage-info-box">
-              <strong class="stage-name">{{ stage.name }}</strong>
-              <span class="stage-dafi">{{ stage.dafi }}</span>
-              <span class="stage-calculated-date">{{ stage.computedDateText }}</span>
-            </div>
+          <!-- Card Footer Link -->
+          <div class="card-footer">
+            <span class="view-link">Configure Stages &rarr;</span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Add Crop Modal -->
+    <div v-if="showAddModal" class="modal-backdrop" @click.self="showAddModal = false">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Add New Crop Template</h3>
+          <button @click="showAddModal = false" class="btn-close">✕</button>
+        </div>
+        <form @submit.prevent="handleCreateTemplate" class="modal-form">
+          <div class="form-group">
+            <label>Crop Name</label>
+            <input v-model="newCrop.crop_name" type="text" placeholder="e.g., Durian, Mango, Pomelo" required />
+          </div>
+          <div class="form-group">
+            <label>Variety</label>
+            <input v-model="newCrop.variety" type="text" placeholder="e.g., Puyat, Carabao, Magallanes" required />
+          </div>
+          <div class="form-group">
+            <label>Standard Tree Spacing</label>
+            <input v-model.number="newCrop.standard_tree_spacing" type="number" step="0.5" placeholder="e.g., 10" />
+          </div>
+          <div class="form-group">
+            <label>Description / Notes</label>
+            <textarea v-model="newCrop.description" placeholder="Brief notes on orchard management..." rows="3"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" @click="showAddModal = false" class="btn-secondary">Cancel</button>
+            <button type="submit" :disabled="saving" class="btn-primary">
+              {{ saving ? 'Saving...' : 'Save Template' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
+
+  <!-- Add this component at the bottom of your CropView.vue template -->
+  <CropStagesModal :isOpen="showStagesModal" :crop="selectedCropForConfig" @close="showStagesModal = false" />
+
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted } from 'vue';
+import { cropService } from '../services/cropService.js';
+import CropStagesModal from '../components/modals/CropStagesModal.vue';
 
-// Default Day 0 set to today (YYYY-MM-DD)
-const dayZeroDate = ref(new Date().toISOString().split('T')[0]);
 
-const sampleCropStages = [
-  { name: 'Flower Induction', dafi: '0 DAFI' },
-  { name: 'Bud Emergence', dafi: '10-14 DAFI' },
-  { name: 'Bud Elongation', dafi: '15-18 DAFI' },
-  { name: 'Pre-Bloom', dafi: '21-28 DAFI' },
-  { name: 'Full Bloom', dafi: '26-33 DAFI' },
-  { name: 'Fruit Set', dafi: '32-35 DAFI' },
-  { name: 'Fruit Set (Late)', dafi: '42-45 DAFI' },
-  { name: 'Fruit Development', dafi: '52-55 DAFI' },
-  { name: 'Fruit Development II', dafi: '56-65 DAFI' },
-  { name: 'Fruit Enlargement', dafi: '70-75 DAFI' },
-  { name: 'Fruit Maturity', dafi: '80-85 DAFI' },
-  { name: 'Fruit Maturity (Final)', dafi: '90-105 DAFI' }
-];
+const templates = ref([]);
+const loading = ref(true);
+const showAddModal = ref(false);
+const saving = ref(false);
+const showStagesModal = ref(false);
+const selectedCropForConfig = ref(null);
 
-// Helper function to format Date object into "MMM DD, YYYY"
-function formatDate(dateObj) {
-  return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function selectCropForStages(crop) {
+  selectedCropForConfig.value = crop;
+  showStagesModal.value = true;
 }
 
-// Compute projected dates based on Day 0 + DAFI range/value
-const calculatedStages = computed(() => {
-  if (!dayZeroDate.value) {
-    return sampleCropStages.map(s => ({ ...s, computedDateText: '--' }));
+const newCrop = ref({
+  crop_name: '',
+  variety: '',
+  standard_tree_spacing: null,
+  description: ''
+});
+
+const themes = ['theme-green', 'theme-yellow', 'theme-pink', 'theme-blue', 'theme-purple', 'theme-amber'];
+function getThemeClass(index) { return themes[index % themes.length]; }
+
+async function fetchTemplates() {
+  loading.value = true;
+  try {
+    templates.value = await cropService.getCropTemplates();
+  } catch (err) {
+    console.error('Failed to load crop templates:', err.message);
+  } finally {
+    loading.value = false;
   }
+}
 
-  const baseDate = new Date(dayZeroDate.value);
+async function handleCreateTemplate() {
+  saving.value = true;
+  try {
+    await cropService.createCropTemplate(newCrop.value);
+    showAddModal.value = false;
+    newCrop.value = { crop_name: '', variety: '', standard_tree_spacing: null, description: '' };
+    await fetchTemplates();
+  } catch (err) {
+    alert('Error creating template: ' + err.message);
+  } finally {
+    saving.value = false;
+  }
+}
 
-  return sampleCropStages.map(stage => {
-    const numbers = stage.dafi.match(/\d+/g);
-    let dateStr = '--';
+async function deleteTemplate(id) {
+  if (!confirm('Are you sure you want to delete this crop template?')) return;
+  try {
+    await cropService.deleteCropTemplate(id);
+    await fetchTemplates();
+  } catch (err) {
+    alert('Error deleting template: ' + err.message);
+  }
+}
 
-    if (numbers && numbers.length === 1) {
-      const days = parseInt(numbers[0], 10);
-      const targetDate = new Date(baseDate);
-      targetDate.setDate(targetDate.getDate() + days);
-      dateStr = formatDate(targetDate);
-    } else if (numbers && numbers.length >= 2) {
-      const startDays = parseInt(numbers[0], 10);
-      const endDays = parseInt(numbers[1], 10);
 
-      const startDate = new Date(baseDate);
-      startDate.setDate(startDate.getDate() + startDays);
-
-      const endDate = new Date(baseDate);
-      endDate.setDate(endDate.getDate() + endDays);
-
-      if (startDate.getFullYear() === endDate.getFullYear()) {
-        const startFormatted = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const endFormatted = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        dateStr = `${startFormatted} - ${endFormatted}`;
-      } else {
-        dateStr = `${formatDate(startDate)} - ${formatDate(endDate)}`;
-      }
-    }
-
-    return {
-      ...stage,
-      computedDateText: dateStr
-    };
-  });
+onMounted(() => {
+  fetchTemplates();
 });
 </script>
 
 <style scoped>
-.crop-setup-view { display: flex; flex-direction: column; gap: 16px; text-align: left; background: #fff; margin: 0; padding: 0; box-sizing: border-box; }
-.view-header { display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin: 0; background: #fff; }
-.view-header h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #0f172a; }
-.sub-subtitle { font-size: 0.825rem; color: #64748b; }
+.crop-setup-view{display:flex;flex-direction:column;gap:20px;text-align:left;background:#f8fafc;padding:20px;border-radius:12px;box-sizing:border-box}
+.view-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:1px solid #e2e8f0}
+.view-header h2{margin:0;font-size:1.25rem;font-weight:700;color:#0f172a}
+.sub-subtitle{font-size:0.825rem;color:#64748b}
 
-.card { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; }
-.control-card { padding: 12px 16px; display: flex; align-items: center; justify-content: flex-start; }
+.crop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.crop-profile-card{border-radius:10px;border:1px solid rgba(0,0,0,0.08);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s}
+.crop-profile-card:hover{transform:translateY(-2px);box-shadow:0 8px 16px -4px rgba(0,0,0,0.08);border-color:rgba(0,0,0,0.15)}
 
-.date-picker-group { display: flex; align-items: center; gap: 12px; }
-.date-picker-group label { font-size: 0.85rem; font-weight: 600; color: #334155; }
-.form-input-date { padding: 6px 12px; border: none; background: #f8fafc; border-radius: 6px; font-size: 0.85rem; color: #0f172a; outline: none; cursor: pointer; }
-.form-input-date:focus { background: #f1f5f9; }
+.card-banner{padding:12px 14px 8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.banner-title-group{display:flex;flex-direction:column;min-width:0;width:100%}
+.crop-name{font-size:0.95rem;font-weight:800;color:#0f172a;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.variety-text{font-size:0.75rem;color:#334155;font-weight:600;margin-top:2px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.content-card { padding: 24px; overflow-x: auto; }
+.btn-delete{background:rgba(255,255,255,0.8);border:1px solid #fee2e2;color:#ef4444;width:22px;height:22px;border-radius:6px;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-delete:hover{background:#fee2e2}
 
-/* Timeline Wrapper */
-.timeline-container { position: relative; padding: 30px 10px 10px 10px; min-width: 1200px; }
-.timeline-axis-line { position: absolute; top: 181px; left: 0; right: 0; height: 3px; background: #16a34a; z-index: 1; }
+.profile-body-stacked{padding:8px 14px 12px;display:flex;flex-direction:column;gap:6px;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)}
+.detail-row{display:flex;align-items:baseline;gap:6px;font-size:0.75rem;color:#0f172a}
+.detail-label{font-size:0.68rem;color:#475569;font-weight:700;text-transform:uppercase;min-width:52px;flex-shrink:0}
+.detail-value{font-size:0.78rem;font-weight:600;color:#0f172a}
+.desc-text{color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
 
-/* Timeline Stages Grid Layout */
-.stages-timeline-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; position: relative; z-index: 2; }
-.timeline-stage-node { display: flex; flex-direction: column; align-items: center; position: relative; min-height: 250px; }
+.card-footer{padding:8px 14px;text-align:right;margin-top:auto}
+.view-link{font-size:0.75rem;font-weight:700;color:#15803d}
 
-/* Chemical Input Slot Boxes */
-.chemical-slots-group { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-bottom: 0; }
-.chem-slot-placeholder { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 4px; padding: 6px 4px; text-align: center; height: 26px; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
-.chem-slot-placeholder:hover { background: #f1f5f9; border-color: #94a3b8; }
-.slot-text { font-size: 0.65rem; color: #64748b; font-weight: 500; white-space: nowrap; }
+.theme-green{background:#dcfce7}
+.theme-yellow{background:#fef08a}
+.theme-pink{background:#fbcfe8}
+.theme-blue{background:#bfdbfe}
+.theme-purple{background:#e9d5ff}
+.theme-amber{background:#fde68a}
 
-/* Timeline Marker with Gaps Above and Below Green Axis */
-.node-marker-wrap { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 3; height: 12px; margin-top: 18px; margin-bottom: 18px; }
-.timeline-dot { width: 12px; height: 12px; background: #16a34a; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px #bbf7d0; }
-
-/* Stage Info Box Uniformly Below Line */
-.stage-info-box { display: flex; flex-direction: column; align-items: center; text-align: center; width: 95px; }
-.stage-name { font-size: 0.725rem; font-weight: 700; color: #0f172a; line-height: 1.1; margin-bottom: 3px; }
-.stage-dafi { font-size: 0.65rem; color: #475569; font-weight: 600; white-space: nowrap; }
-.stage-calculated-date { font-size: 0.625rem; color: #16a34a; font-weight: 700; margin-top: 3px; line-height: 1.15; }
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50}
+.modal-card{background:#fff;border-radius:12px;width:100%;max-width:440px;padding:24px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.15);display:flex;flex-direction:column;gap:16px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #f1f5f9}
+.modal-header h3{margin:0;font-size:1.1rem;color:#0f172a;font-weight:700}
+.btn-close{background:none;border:none;font-size:1rem;color:#64748b;cursor:pointer}
+.modal-form{display:flex;flex-direction:column;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:0.75rem;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.02em}
+.form-group input,.form-group textarea{padding:9px 12px;border:none;background:#f8fafc;border-radius:8px;font-size:0.85rem;outline:none;color:#0f172a}
+.form-group input:focus,.form-group textarea:focus{background:#f1f5f9}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.btn-primary{padding:9px 16px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;transition:background 0.2s}
+.btn-primary:hover{background:#15803d}
+.btn-secondary{padding:9px 16px;background:#f8fafc;color:#334155;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer}
+.btn-secondary:hover{background:#f1f5f9}
+.no-results,.empty-state{text-align:center;color:#64748b;padding:32px 0;font-size:0.85rem}
 </style>

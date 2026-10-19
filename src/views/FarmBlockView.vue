@@ -3,6 +3,7 @@
     <!-- 1. Header Section with Integrated Title, Badge, and Actions -->
     <div class="view-header">
       <div class="list-header">
+        <button @click="$emit('back')" class="btn-back" title="Back to Farms">&larr; Back</button>
         <h2>{{ farm.name }} — Production Block Management</h2>
         <span class="badge" v-if="blocks.length > 0">{{ blocks.length }} Blocks Available</span>
       </div>
@@ -27,18 +28,36 @@
       </div>
 
       <div v-else class="blocks-grid">
-        <div v-for="block in blocks" :key="block.id" :class="['block-card-circle', getCropTheme(block.primary_crop)]" @click="handleCardClick(block)">
+        <div 
+          v-for="block in blocks" 
+          :key="block.id" 
+          :class="['block-card-container', getCropTheme(block.primary_crop)]" 
+          @click="handleCardClick(block)"
+        >
           <button @click.stop="handleDelete(block)" class="btn-danger-icon" title="Delete Block">🗑️</button>
-          
-          <div class="circle-content">
+
+          <!-- Top Block Code & Crop Name Banner -->
+          <div class="block-card-header">
+            <span class="block-status-pill">{{ block.status || 'Active' }}</span>
             <strong class="block-code">{{ block.block_code }}</strong>
-            <span class="crop-text">{{ block.primary_crop || 'General' }}</span>
-            
-            <div class="block-details-stack">
-              <span class="detail-row"><b>Area:</b> {{ block.hectarage }} Ha</span>
-              <span class="detail-row"><b>Trees:</b> {{ block.tree_count || 'N/A' }}</span>
-              <span class="detail-row"><b>Status:</b> {{ block.status }}</span>
+            <span class="crop-text">{{ block.primary_crop || 'General Crop' }}</span>
+          </div>
+
+          <!-- Structured Parameter Grid -->
+          <div class="block-metrics-grid">
+            <div class="metric-box">
+              <span class="m-label">AREA</span>
+              <span class="m-val">{{ block.hectarage }} <small>Ha</small></span>
             </div>
+            <div class="metric-box">
+              <span class="m-label">TREES</span>
+              <span class="m-val">{{ block.tree_count || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- Footer Action Hint -->
+          <div class="block-footer-bar">
+            <span class="footer-hint">Manage Zone &rarr;</span>
           </div>
         </div>
       </div>
@@ -160,40 +179,42 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.block-view{display:flex;flex-direction:column;gap:20px;text-align:left;background:#fff;}
-.view-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;padding-bottom:12px}
+.block-view{display:flex;flex-direction:column;gap:20px;text-align:left;background:#fff}
+.view-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;padding-bottom:12px;flex-wrap:wrap;gap:12px}
 .list-header{display:flex;align-items:center;gap:12px}
-.list-header h2{margin:0;font-size:1.25rem;font-weight:700;color:#0f172a}
+.list-header h2{margin:0;font-size:1.2rem;font-weight:700;color:#0f172a}
+.btn-back{background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:0.8rem;font-weight:600;color:#475569;cursor:pointer;transition:all 0.15s}
+.btn-back:hover{background:#e2e8f0;color:#0f172a}
 .badge{background:#ecfdf5;color:#047857;font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:12px}
-.header-actions{display:flex;align-items:center;gap:10px}
+.header-actions,.role-switcher{display:flex;align-items:center;gap:10px}
 .card{background:#fff;padding:0}
 .btn-primary{padding:8px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:4px;box-shadow:0 2px 4px rgba(22,163,74,0.2)}
 .btn-primary:hover{background:#15803d}
 .state-msg{color:#64748b;font-size:0.85rem;padding:24px 0;text-align:center}
-.blocks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:20px;align-items:center}
-.block-card-circle{width:180px;height:180px;border-radius:50%;border:2px solid #64748b;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;position:relative;cursor:pointer;box-shadow:0 8px 20px -4px rgba(0,0,0,0.08);transition:all 0.25s ease;margin:0 auto}
-.block-card-circle:hover{transform:translateY(-3px);border-color:#0f172a;box-shadow:0 15px 25px -8px rgba(0,0,0,0.15)}
-.circle-content{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
-
-/* Solid black text details */
-.block-code,.crop-text,.detail-row{color:#000000;text-shadow:0 1px 1px rgba(255,255,255,0.4)}
-.block-code{font-size:1.05rem;font-weight:800;max-width:130px;overflow:visible;text-overflow:clip;word-break:break-word;line-height:1.2}
-.crop-text{font-size:0.75rem;font-weight:600;max-width:130px;overflow:visible;text-overflow:clip;word-break:break-word;margin-bottom:2px}
-.btn-danger-icon{position:absolute;top:28px;right:30px;background:#ffffff;border:1px solid #fecaca;color:#ef4444;width:24px;height:24px;border-radius:50%;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.2s;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
-.btn-danger-icon:hover{background:#fee2e2;transform:scale(1.1)}
-.block-card-circle:hover .btn-danger-icon{opacity:1}
-
-.block-details-stack{display:flex;flex-direction:column;gap:1px;background:transparent;padding:2px 10px;border-radius:0;font-size:0.7rem;width:130px;text-align:left;box-sizing:border-box}
-.detail-row{overflow:visible;text-overflow:clip;word-break:break-word;line-height:1.2}
-
-/* 6 Crop Theme Color Palettes */
-.theme-green{background:linear-gradient(145deg,#f0fdf4,#dcfce7)}
-.theme-yellow{background:linear-gradient(145deg,#fefce8,#fef08a)}
-.theme-pink{background:linear-gradient(145deg,#fdf2f8,#fbcfe8)}
-.theme-blue{background:linear-gradient(145deg,#eff6ff,#bfdbfe)}
-.theme-purple{background:linear-gradient(145deg,#fdf4ff,#e9d5ff)}
-.theme-amber{background:linear-gradient(145deg,#fffbeb,#fde68a)}
-
-.role-switcher{display:flex;align-items:center;gap:6px;background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:0.75rem;font-weight:600;color:#334155}
+.blocks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.block-card-container{background:#fff;border-radius:12px;border:1px solid #cbd5e1;padding:14px;display:flex;flex-direction:column;justify-content:space-between;position:relative;cursor:pointer;box-shadow:0 4px 12px -2px rgba(0,0,0,0.05);transition:all 0.2s ease;min-height:180px;box-sizing:border-box}
+.block-card-container:hover{transform:translateY(-3px);border-color:#0f172a;box-shadow:0 10px 20px -5px rgba(0,0,0,0.12)}
+.block-card-header{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.block-status-pill{font-size:0.625rem;font-weight:700;text-transform:uppercase;background:#0f172a;color:#fff;padding:2px 6px;border-radius:4px;margin-bottom:4px;letter-spacing:0.03em}
+.block-code{font-size:1.15rem;font-weight:800;color:#0f172a;line-height:1.1}
+.crop-text{font-size:0.775rem;font-weight:600;color:#475569}
+.block-metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;padding:8px;background:rgba(255,255,255,0.7);border-radius:6px;border:1px solid rgba(0,0,0,0.06)}
+.metric-box{display:flex;flex-direction:column}
+.m-label{font-size:0.6rem;font-weight:700;color:#64748b;letter-spacing:0.04em}
+.m-val{font-size:0.85rem;font-weight:700;color:#0f172a}
+.m-val small{font-size:0.7rem;font-weight:500;color:#64748b}
+.block-footer-bar{display:flex;justify-content:flex-end;margin-top:10px;border-top:1px dashed rgba(0,0,0,0.1);padding-top:6px}
+.footer-hint{font-size:0.725rem;font-weight:700;color:#16a34a}
+.btn-danger-icon{position:absolute;top:10px;right:10px;background:#fff;border:1px solid #fecaca;color:#ef4444;width:24px;height:24px;border-radius:6px;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.btn-danger-icon:hover{background:#fee2e2;transform:scale(1.08)}
+.block-card-container:hover .btn-danger-icon{opacity:1}
+.theme-green{background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%)}
+.theme-yellow{background:linear-gradient(135deg,#fefce8 0%,#fef08a 100%)}
+.theme-pink{background:linear-gradient(135deg,#fdf2f8 0%,#fbcfe8 100%)}
+.theme-blue{background:linear-gradient(135deg,#eff6ff 0%,#bfdbfe 100%)}
+.theme-purple{background:linear-gradient(135deg,#fdf4ff 0%,#e9d5ff 100%)}
+.theme-amber{background:linear-gradient(135deg,#fffbeb 0%,#fde68a 100%)}
+.role-switcher{background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:0.75rem;font-weight:600;color:#334155}
 .role-dropdown{background:#fff;border:none;border-radius:6px;padding:4px 6px;font-size:0.75rem;font-weight:600;cursor:pointer;outline:none}
+.role-dropdown { background: #fff; border: none; border-radius: 6px; padding: 4px 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; outline: none; }
 </style>

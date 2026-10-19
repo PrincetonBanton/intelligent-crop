@@ -2,17 +2,17 @@
   <div v-if="isOpen" class="modal-backdrop" @click.self="closeModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Register Chemical Input</h3>
+        <h3>Chemical Input</h3>
         <button @click="closeModal" class="btn-close">✕</button>
       </div>
       <p class="modal-desc">
-        Type a commercial trade name and select its official active ingredient to automatically inherit its IRAC classification.
+        TEMPORARY RA NI IDUNGAG TANAN KINAHANGLAN INPUT PARA SA TABLE (label rate, target pest, etc....)
       </p>
 
       <form @submit.prevent="handleSubmit" class="modal-form">
         <!-- Trade Name -->
         <div class="form-group">
-          <label>Commercial Trade Name</label>
+          <label>Name</label>
           <input 
             v-model="form.tradeName" 
             type="text" 

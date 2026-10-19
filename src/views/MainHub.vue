@@ -29,6 +29,12 @@
             {{ loading ? 'Authenticating...' : (isSignUp ? 'Sign Up' : 'Sign In') }}
           </button>
         </form>
+
+        <!-- Test System Bypass Button -->
+        <button type="button" @click="handleTestBypass" class="btn-secondary">
+          View Testing
+        </button>
+
         <p class="toggle-text">
           {{ isSignUp ? 'Already registered?' : 'Need an account?' }}
           <a @click="isSignUp = !isSignUp">{{ isSignUp ? 'Sign In' : 'Sign Up' }}</a>
@@ -118,6 +124,11 @@ async function handleAuth() {
   }
 }
 
+function handleTestBypass() {
+  currentUser.value = { id: 'test-bypass-id', email: 'tester@intelligentcrop.com', role: 'owner' };
+  loadFarms();
+}
+
 async function handleSignOut() {
   await authService.signOut();
   currentUser.value = null;
@@ -147,13 +158,16 @@ onMounted(() => {
 .online .dot { background: #10b981; }
 .offline .dot { background: #ef4444; }
 .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; background: #f1f5f9; }
-.auth-card { width: 340px; padding: 28px; background: #fff; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; flex-direction: column; gap: 16px; }
+.auth-card { width: 340px; padding: 28px; background: #fff; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box; }
 .auth-card h3 { margin: 0; font-size: 1.2rem; color: #0f172a; }
-.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; width: 100%; }
 .form-group label { font-size: 0.8rem; font-weight: 600; color: #475569; }
-.form-group input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; }
-.btn-primary { padding: 10px; background: #16a34a; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+.form-group input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; box-sizing: border-box; outline: none; }
+.form-group input:focus { border-color: #16a34a; }
+.btn-primary { width: 100%; padding: 10px; background: #16a34a; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px; box-sizing: border-box; }
 .btn-primary:hover { background: #15803d; }
+.btn-secondary { width: 100%; padding: 9px; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; cursor: pointer; box-sizing: border-box; font-size: 0.85rem; }
+.btn-secondary:hover { background: #f1f5f9; border-color: #94a3b8; }
 .toggle-text { font-size: 0.8rem; color: #64748b; margin: 0; text-align: center; }
 .toggle-text a { color: #16a34a; font-weight: 600; cursor: pointer; text-decoration: underline; }
 .main-container { display: flex; flex: 1; overflow: hidden; }

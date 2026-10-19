@@ -46,18 +46,38 @@
                     <div class="column-content">
                       <div class="brands-section">
                         <div v-if="getMappedBrands(sub.subGroup).length > 0" class="brand-tags">
-                          <span 
+                          <div 
                             v-for="brand in getMappedBrands(sub.subGroup)" 
                             :key="brand.id" 
-                            class="brand-tag clickable-tag"
-                            @click="handleBrandClick(brand)"
+                            class="brand-tag-wrapper"
                           >
-                            <span class="brand-name">{{ brand.trade_name }}</span>
-                            <small class="brand-ai">({{ brand.active_ingredient }})</small>
-                            <span :class="['type-badge', getTypeClass(brand.application_type)]">
-                              {{ brand.application_type || 'Contact' }}
+                            <span 
+                              class="brand-tag clickable-tag"
+                              @click="handleBrandClick(brand)"
+                            >
+                              <span class="brand-name">{{ brand.trade_name }}</span>
+                              <small class="brand-ai">({{ brand.active_ingredient }})</small>
                             </span>
-                          </span>
+
+                            <!-- Hover Tooltip Dropping Down Below -->
+                            <div class="brand-hover-tooltip">
+                              <div class="tooltip-row">
+                                <span class="tooltip-label">Type:</span>
+                                <span :class="['type-badge', getTypeClass(brand.application_type)]">
+                                  {{ brand.application_type || 'Contact' }}
+                                </span>
+                              </div>
+                              <div class="tooltip-row pests-row">
+                                <span class="tooltip-label">Targets:</span>
+                                <div v-if="brand.target_pests && brand.target_pests.length > 0" class="tooltip-pests-list">
+                                  <span v-for="(pest, pIdx) in brand.target_pests" :key="pIdx" class="pest-chip">
+                                    {{ pest }}
+                                  </span>
+                                </div>
+                                <span v-else class="empty-brand-slot">No targets specified</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                         <span v-else class="empty-brand-slot">NA</span>
                       </div>
@@ -146,7 +166,7 @@ const groupedIracData = computed(() => {
   const q = searchQuery.value.trim().toLowerCase();
   const filtered = iracMasterData.value.filter(item => {
     if (!q) return true;
-    const brands = getMappedBrands(item.sub_group).map(b => `${b.trade_name} ${b.active_ingredient} ${b.application_type || ''}`).join(' ').toLowerCase();
+    const brands = getMappedBrands(item.sub_group).map(b => `${b.trade_name} ${b.active_ingredient} ${b.application_type || ''} ${(b.target_pests || []).join(' ')}`).join(' ').toLowerCase();
     const ais = (item.active_ingredients || []).join(' ').toLowerCase();
     return (
       item.irac_group.toLowerCase().includes(q) ||
@@ -208,6 +228,18 @@ onMounted(() => { fetchData(); });
 .subgroup-code{min-width:24px}
 .column-content{display:flex;flex-direction:column;gap:8px}
 .brand-tags{display:flex;flex-wrap:wrap;gap:6px}
+
+/* Hover Tooltip Dropping Downwards */
+.brand-tag-wrapper{position:relative;display:inline-block;z-index:1}
+.brand-hover-tooltip{visibility:hidden;opacity:0;position:absolute;top:100%;left:0;transform:translateY(4px);background:#0f172a;color:#fff;padding:8px 12px;border-radius:6px;font-size:0.75rem;width:220px;z-index:100;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06);transition:all 0.2s ease;pointer-events:none;font-weight:normal}
+.brand-tag-wrapper:hover{z-index:50}
+.brand-tag-wrapper:hover .brand-hover-tooltip{visibility:visible;opacity:1}
+.tooltip-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.tooltip-row:last-child{margin-bottom:0}
+.tooltip-label{color:#94a3b8;font-weight:600;min-width:45px}
+.tooltip-pests-list{display:flex;flex-wrap:wrap;gap:3px}
+.pest-chip{background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:0.7rem}
+
 .brand-tag{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:3px 8px;border-radius:4px;font-size:0.78rem;display:inline-flex;align-items:center;gap:6px;font-weight:normal}
 .brand-name{color:#0f172a;font-weight:700}
 .brand-ai{color:#15803d;font-weight:normal}

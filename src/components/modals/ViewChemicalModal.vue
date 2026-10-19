@@ -27,6 +27,17 @@
                 <tr><td class="label-cell">Category</td><td class="value-cell">{{ localChemical.category || 'N/A' }}</td></tr>
                 <tr><td class="label-cell">Sub-group & Class</td><td class="value-cell">Subgroup {{ localChemical.sub_group }}</td></tr>
                 <tr><td class="label-cell">Application Type</td><td class="value-cell">{{ localChemical.application_type || 'Contact' }}</td></tr>
+                <tr>
+                  <td class="label-cell">Target Pests</td>
+                  <td class="value-cell">
+                    <div v-if="localChemical.target_pests && localChemical.target_pests.length > 0" class="modal-pest-chips">
+                      <span v-for="(pest, pIdx) in localChemical.target_pests" :key="pIdx" class="pest-chip-item">
+                        {{ pest }}
+                      </span>
+                    </div>
+                    <span v-else class="empty-text">No target pests specified</span>
+                  </td>
+                </tr>
                 <tr><td class="label-cell">Package Price (₱)</td><td class="value-cell edit-cell"><input v-model.number="localChemical.package_price" type="number" step="1" class="form-input-uniform" /></td></tr>
                 <tr>
                   <td class="label-cell">Package Size</td>
@@ -68,7 +79,6 @@
               <!-- Farm & Block Selectors -->
               <div class="form-row-grid">
                 <div class="form-group">
-                  <label>Plantation Unit (Farm)</label>
                   <select v-model="selectedFarmId" @change="onFarmChange" class="form-input">
                     <option value="" disabled>-- Select Farm --</option>
                     <option v-for="farm in farmsList" :key="farm.id" :value="farm.id">
@@ -77,7 +87,6 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>Target Block / Trees</label>
                   <div class="input-row-group">
                     <select v-model="selectedBlockId" @change="onBlockSelected" class="form-input" :disabled="!selectedFarmId">
                       <option value="" disabled>-- Select Block --</option>
@@ -212,7 +221,6 @@ const chemicalPerTank = computed(() => {
   if (!localChemical.value) return 0;
   const dosageKnapsack = parseFloat(localChemical.value.dosage_per_knapsack) || 0;
   const tankVol = parseFloat(calc.value.equipmentVolume) || 16;
-  // Multiplier relative to 16L knapsack standard
   return ((tankVol / 16) * dosageKnapsack).toFixed(2);
 });
 
@@ -270,6 +278,9 @@ onMounted(() => { loadFarms(); });
 .info-table td{padding:6px 12px;border-bottom:1px solid #e2e8f0}
 .label-cell{color:#475569;width:42%;background:#f8fafc;border-right:1px solid #e2e8f0}
 .value-cell{color:#0f172a}
+.modal-pest-chips{display:flex;flex-wrap:wrap;gap:4px}
+.pest-chip-item{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:600}
+.empty-text{color:#94a3b8;font-style:italic;font-size:0.8rem}
 .dosage-edit-wrap{display:flex;align-items:center;gap:6px}
 .form-input-uniform{width:90px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:0.85rem;text-align:right;color:#0f172a;outline:none;box-sizing:border-box}
 .form-input-unit{width:50px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:0.85rem;color:#0f172a;outline:none}

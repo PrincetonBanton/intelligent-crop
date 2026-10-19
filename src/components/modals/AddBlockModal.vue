@@ -16,8 +16,8 @@
           <label>Primary Crop</label>
           <select v-model="form.primary_crop" class="form-select" required>
             <option value="" disabled selected>-- Select Crop --</option>
-            <option v-for="crop in cropTemplates" :key="crop.id" :value="crop.name">
-              {{ crop.name }} ({{ crop.variety }})
+            <option v-for="crop in cropTemplates" :key="crop.id" :value="crop.crop_name">
+              {{ crop.crop_name }} ({{ crop.variety }})
             </option>
           </select>
         </div>
@@ -65,7 +65,8 @@ const cropTemplates = ref([]);
 
 async function loadCropTemplates() {
   try {
-    const { data, error } = await supabase.from('crop_templates').select('id, name, variety').order('name');
+    // Fixed: changed 'name' to 'crop_name' to match crop_templates table schema
+    const { data, error } = await supabase.from('crop_templates').select('id, crop_name, variety').order('crop_name');
     if (!error && data) cropTemplates.value = data;
   } catch (err) { console.error(err); }
 }

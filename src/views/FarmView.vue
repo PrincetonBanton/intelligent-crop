@@ -34,32 +34,33 @@
           <div 
             v-for="(farm, index) in farms" 
             :key="farm.id" 
-            :class="['farm-profile-card', getThemeClass(index)]" 
-            @click="handleCardClick(farm)"
+            :class="['farm-profile-card', getThemeClass(index)]"
           >
-            <!-- Top Accent Banner with Title, Location, and Delete Action -->
-            <div class="card-banner">
-              <div class="banner-title-group">
-                <h4 class="farm-name" :title="farm.name">{{ farm.name }}</h4>
-                <span class="location-text">{{ farm.location || 'Region Unassigned' }}</span>
+            <!-- Clickable Card Body -->
+            <div class="card-main-trigger" @click="handleCardClick(farm)">
+              <!-- Top Accent Banner with Title and Location -->
+              <div class="card-banner">
+                <div class="banner-title-group">
+                  <h4 class="farm-name" :title="farm.name">{{ farm.name }}</h4>
+                  <span class="location-text">{{ farm.location || 'Region Unassigned' }}</span>
+                </div>
               </div>
-              <button @click.stop="handleDelete(farm)" class="btn-danger-icon" title="Delete Farm">🗑️</button>
-            </div>
 
-            <!-- Profile Details Stack -->
-            <div class="profile-body">
-              <div class="metric-item">
-                <span class="metric-label">Area</span>
-                <span class="metric-value"><b>{{ farm.total_hectarage || 0 }}</b> Ha</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">Crop</span>
-                <span class="metric-value">{{ farm.primary_crop || 'Multi-Crop' }}</span>
+              <!-- Profile Details Stack -->
+              <div class="profile-body">
+                <div class="metric-item">
+                  <span class="metric-label">Area</span>
+                  <span class="metric-value"><b>{{ farm.total_hectarage || 0 }}</b> Ha</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">Crop</span>
+                  <span class="metric-value">{{ farm.primary_crop || 'Multi-Crop' }}</span>
+                </div>
               </div>
             </div>
 
             <!-- Card Footer Link -->
-            <div class="card-footer">
+            <div class="card-footer" @click="selectedFarm = farm">
               <span class="view-link">Explore Blocks &rarr;</span>
             </div>
           </div>
@@ -134,20 +135,8 @@ async function handleCreateFarm(formData) {
   finally { saving.value = false; }
 }
 
-function handleCardClick(farm) { selectedFarm.value = farm; }
-
-async function handleDelete(farm) {
-  if (!currentUser.value) currentUser.value = await authService.getCurrentUser() || { role: testRole.value };
-  if (!permissions.hasPermission(currentUser.value.role, ROLES.OWNER)) {
-    alert(`Access Denied: Only Owners can delete farms.`);
-    return;
-  }
-  if (!confirm(`Are you sure you want to permanently delete plantation unit "${farm.name}"? This action cannot be undone.`)) return;
-
-  try {
-    await farmService.deleteFarm(farm.id);
-    await loadFarms();
-  } catch (err) { alert('Failed to delete farm: ' + err.message); }
+function handleCardClick(farm) {
+  alert('FarmViewModal ayaw kalimot edit delete');
 }
 
 onMounted(async () => { await loadCurrentUser(); await loadFarms(); });
@@ -167,23 +156,24 @@ onMounted(async () => { await loadCurrentUser(); await loadFarms(); });
 
 /* Grid & Cards */
 .farms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-.farm-profile-card { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+.farm-profile-card { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
 .farm-profile-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px -4px rgba(0,0,0,0.06); border-color: #cbd5e1; }
+
+.card-main-trigger { cursor: pointer; display: flex; flex-direction: column; }
 
 /* Banner Section with Details */
 .card-banner { padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.banner-title-group { display: flex; flex-direction: column; min-width: 0; }
+.banner-title-group { display: flex; flex-direction: column; min-width: 0; width: 100%; }
 .farm-name { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .location-text { font-size: 0.75rem; color: #475569; margin-top: 2px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.btn-danger-icon { background: rgba(255, 255, 255, 0.8); border: 1px solid #fee2e2; color: #ef4444; width: 24px; height: 24px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.btn-danger-icon:hover { background: #fee2e2; }
 
 /* Card Content Sections */
 .profile-body { padding: 10px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f8fafc; border-top: 1px solid rgba(0, 0, 0, 0.05); border-bottom: 1px solid #f1f5f9; }
 .metric-item { display: flex; flex-direction: column; }
 .metric-label { font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
 .metric-value { font-size: 0.85rem; color: #1e293b; font-weight: 600; margin-top: 2px; }
-.card-footer { padding: 8px 14px; text-align: right; background: #fff; margin-top: auto; }
+.card-footer { padding: 8px 14px; text-align: right; background: #fff; margin-top: auto; cursor: pointer; }
+.card-footer:hover .view-link { text-decoration: underline; }
 .view-link { font-size: 0.75rem; font-weight: 600; color: #16a34a; }
 
 /* Color Banners */

@@ -27,8 +27,8 @@
           <div class="crop-checkbox-container">
             <div v-if="cropTemplates.length === 0" class="no-crops-msg">Loading crop database...</div>
             <label v-for="crop in cropTemplates" :key="crop.id" class="crop-checkbox-label">
-              <input type="checkbox" :value="crop.name" v-model="selectedCrops" />
-              <span>{{ crop.name }} <small>({{ crop.variety }})</small></span>
+              <input type="checkbox" :value="crop.crop_name" v-model="selectedCrops" />
+              <span>{{ crop.crop_name }} <small>({{ crop.variety }})</small></span>
             </label>
           </div>
           <small class="helper-text">Select crops present in this farm.</small>
@@ -58,7 +58,8 @@ const selectedCrops = ref([]);
 
 async function loadCropTemplates() {
   try {
-    const { data, error } = await supabase.from('crop_templates').select('id, name, variety').order('name');
+    // Fixed: changed 'name' to 'crop_name' to match crop_templates table schema
+    const { data, error } = await supabase.from('crop_templates').select('id, crop_name, variety').order('crop_name');
     if (!error && data) cropTemplates.value = data;
   } catch (err) { console.error(err); }
 }

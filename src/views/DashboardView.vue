@@ -26,17 +26,23 @@
       </div>
 
       <div v-else class="dashboard-content">
-        <!-- Compact Block Grid Section -->
-        <div class="blocks-grid">
-          <div v-for="block in blocks" :key="block.id" :class="['block-card-circle', getCropTheme(block.primary_crop)]" @click="handleCardClick(block)">
-            <div class="circle-content">
+        <!-- Compact Mini Block Grid Section -->
+        <div class="blocks-grid-mini">
+          <div 
+            v-for="block in blocks" 
+            :key="block.id" 
+            :class="['block-card-mini', getCropTheme(block.primary_crop)]" 
+            @click="handleCardClick(block)"
+          >
+            <div class="mini-card-top">
               <strong class="block-code">{{ block.block_code }}</strong>
-              <span class="crop-text">{{ block.primary_crop || 'General' }}</span>
-              
-              <div class="block-details-stack">
-                <span class="detail-row"><b>Area:</b> {{ block.hectarage }} Ha</span>
-                <span class="detail-row"><b>Trees:</b> {{ block.tree_count || 'N/A' }}</span>
-              </div>
+              <span class="block-status-dot" :title="block.status || 'Active'"></span>
+            </div>
+            <span class="crop-text">{{ block.primary_crop || 'General' }}</span>
+            <div class="mini-metrics">
+              <span>{{ block.hectarage }} Ha</span>
+              <span>•</span>
+              <span>{{ block.tree_count || 0 }} trees</span>
             </div>
           </div>
         </div>
@@ -125,35 +131,27 @@ onMounted(loadFarms);
 </script>
 
 <style scoped>
-.dashboard-view { display: flex; flex-direction: column; gap: 16px; text-align: left; background: #fff; margin: 0; padding: 0; }
-.view-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin: 0; background: #fff; }
-.list-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.list-header h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #0f172a; }
-.farm-dropdown-main { padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; font-weight: 600; background: #fff; color: #0f172a; cursor: pointer; }
-.badge { background: #ecfdf5; color: #047857; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
-.card { background: #fff; padding: 0; margin: 0; border: none; }
-.state-msg { color: #64748b; font-size: 0.85rem; padding: 24px 0; text-align: center; }
-
-.dashboard-content { display: flex; flex-direction: column; gap: 20px; }
-
-/* Resized Compact Block Grid */
-.blocks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; align-items: center; }
-.block-card-circle { width: 130px; height: 130px; border-radius: 50%; border: 1.5px solid #64748b; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; text-align: center; position: relative; cursor: pointer; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.06); transition: all 0.2s ease; margin: 0 auto; box-sizing: border-box; }
-.block-card-circle:hover { transform: translateY(-2px); border-color: #0f172a; box-shadow: 0 10px 18px -4px rgba(0,0,0,0.12); }
-.circle-content { display: flex; flex-direction: column; align-items: center; gap: 1px; width: 100%; }
-
-.block-code, .crop-text, .detail-row { color: #000000; text-shadow: 0 1px 1px rgba(255,255,255,0.4); }
-.block-code { font-size: 0.85rem; font-weight: 800; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.1; }
-.crop-text { font-size: 0.65rem; font-weight: 600; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
-
-.block-details-stack { display: flex; flex-direction: column; gap: 0; background: transparent; padding: 0; font-size: 0.62rem; width: 100px; text-align: center; box-sizing: border-box; }
-.detail-row { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
-
-/* 6 Crop Theme Color Palettes */
-.theme-green { background: linear-gradient(145deg, #f0fdf4, #dcfce7); }
-.theme-yellow { background: linear-gradient(145deg, #fefce8, #fef08a); }
-.theme-pink { background: linear-gradient(145deg, #fdf2f8, #fbcfe8); }
-.theme-blue { background: linear-gradient(145deg, #eff6ff, #bfdbfe); }
-.theme-purple { background: linear-gradient(145deg, #fdf4ff, #e9d5ff); }
-.theme-amber { background: linear-gradient(145deg, #fffbeb, #fde68a); }
-</style>  
+.dashboard-view{display:flex;flex-direction:column;gap:16px;text-align:left;background:#fff;margin:0;padding:0}
+.view-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;padding-bottom:12px;margin:0;background:#fff}
+.list-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.list-header h2{margin:0;font-size:1.25rem;font-weight:700;color:#0f172a}
+.farm-dropdown-main{padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;font-weight:600;background:#fff;color:#0f172a;cursor:pointer}
+.badge{background:#ecfdf5;color:#047857;font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:12px}
+.card{background:#fff;padding:0;margin:0;border:none}
+.state-msg{color:#64748b;font-size:0.85rem;padding:24px 0;text-align:center}
+.dashboard-content{display:flex;flex-direction:column;gap:20px}
+.blocks-grid-mini{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.block-card-mini{background:#fff;border-radius:8px;border:1px solid #cbd5e1;padding:8px 10px;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:all 0.15s ease;box-sizing:border-box}
+.block-card-mini:hover{transform:translateY(-2px);border-color:#0f172a;box-shadow:0 4px 10px -2px rgba(0,0,0,0.08)}
+.mini-card-top{display:flex;justify-content:space-between;align-items:center}
+.block-code{font-size:0.8rem;font-weight:800;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.block-status-dot{width:6px;height:6px;background:#16a34a;border-radius:50%}
+.crop-text{font-size:0.7rem;font-weight:600;color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-metrics{font-size:0.65rem;color:#64748b;font-weight:500;display:flex;gap:4px;align-items:center}
+.theme-green{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#bbf7d0}
+.theme-yellow{background:linear-gradient(135deg,#fefce8,#fef08a);border-color:#fde047}
+.theme-pink{background:linear-gradient(135deg,#fdf2f8,#fbcfe8);border-color:#f472b6}
+.theme-blue{background:linear-gradient(135deg,#eff6ff,#bfdbfe);border-color:#93c5fd}
+.theme-purple{background:linear-gradient(135deg,#fdf4ff,#e9d5ff);border-color:#d8b4fe}
+.theme-amber{background:linear-gradient(135deg,#fffbeb,#fde68a);border-color:#fcd34d}
+</style>
