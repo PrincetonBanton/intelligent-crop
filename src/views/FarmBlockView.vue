@@ -32,7 +32,7 @@
           v-for="block in blocks" 
           :key="block.id" 
           :class="['block-card-container', getCropTheme(block.primary_crop)]" 
-          @click="handleCardClick(block)"
+          @click="showBlockDetailsAlert(block)"
         >
           <button @click.stop="handleDelete(block)" class="btn-danger-icon" title="Delete Block">🗑️</button>
 
@@ -57,22 +57,31 @@
 
           <!-- Footer Action Hint -->
           <div class="block-footer-bar">
-            <span class="footer-hint">Manage Zone &rarr;</span>
+            <span @click.stop="openBlockTimeline(block)" class="footer-hint">Open Timeline &rarr;</span>
           </div>
         </div>
       </div>
     </div>
 
     <AddBlockModal :show="showModal" :saving="saving" @close="showModal = false" @save="handleCreateBlock" />
+
+    <!-- 3. Block Lifecycle Cycle Ruler Modal -->
+    <CycleRulerModal 
+      :isOpen="showTimelineModal" 
+      :crop="selectedCropTemplate" 
+      @close="showTimelineModal = false" 
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import AddBlockModal from '../components/modals/AddBlockModal.vue';
+import CycleRulerModal from '../components/modals/CycleRulerModal.vue';
 import { blockService } from '../services/blockService.js';
+import { cropService } from '../services/cropService.js';
 import { authService } from '../services/authService.js';
-import { permissions, ROLES } from '../utils/permissions.js';
+import { ROLES } from '../utils/permissions.js';
 
 const props = defineProps({ farm: { type: Object, required: true } });
 defineEmits(['back']);
@@ -83,6 +92,10 @@ const saving = ref(false);
 const showModal = ref(false);
 const currentUser = ref(null);
 const testRole = ref('owner');
+
+// Timeline Modal State
+const showTimelineModal = ref(false);
+const selectedCropTemplate = ref(null);
 
 // 6 crop-based color themes mapped dynamically by crop name string
 const themes = ['theme-green', 'theme-yellow', 'theme-pink', 'theme-blue', 'theme-purple', 'theme-amber'];
@@ -142,7 +155,7 @@ async function handleCreateBlock(blockData) {
   }
 }
 
-function handleCardClick(block) {
+function showBlockDetailsAlert(block) {
   const details = [
     `🌱 Production Block Profile:`,
     `- Block Code: ${block.block_code}`,
@@ -153,6 +166,27 @@ function handleCardClick(block) {
   ].join('\n');
   
   alert(details);
+}
+
+async function openBlockTimeline(block) {
+  try {
+    const templates = await cropService.getCropTemplates();
+    const targetCropName = (block.primary_crop || '').trim().toLowerCase();
+    const matchedTemplate = templates.find(
+      t => (t.crop_name || '').trim().toLowerCase() === targetCropName
+    );
+
+    if (!matchedTemplate) {
+      alert(`⚠️ No crop template found for "${block.primary_crop || 'this crop'}". Please create a template and configure its stages in "Crop Setup" before viewing the timeline.`);
+      return;
+    }
+
+    selectedCropTemplate.value = matchedTemplate;
+    showTimelineModal.value = true;
+  } catch (err) {
+    console.error('Failed to resolve block crop template:', err);
+    alert('Could not load timeline for this block: ' + err.message);
+  }
 }
 
 async function handleDelete(block) {
@@ -204,7 +238,8 @@ onMounted(async () => {
 .m-val{font-size:0.85rem;font-weight:700;color:#0f172a}
 .m-val small{font-size:0.7rem;font-weight:500;color:#64748b}
 .block-footer-bar{display:flex;justify-content:flex-end;margin-top:10px;border-top:1px dashed rgba(0,0,0,0.1);padding-top:6px}
-.footer-hint{font-size:0.725rem;font-weight:700;color:#16a34a}
+.footer-hint{font-size:0.725rem;font-weight:700;color:#16a34a;cursor:pointer}
+.footer-hint:hover{text-decoration:underline}
 .btn-danger-icon{position:absolute;top:10px;right:10px;background:#fff;border:1px solid #fecaca;color:#ef4444;width:24px;height:24px;border-radius:6px;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
 .btn-danger-icon:hover{background:#fee2e2;transform:scale(1.08)}
 .block-card-container:hover .btn-danger-icon{opacity:1}
@@ -216,5 +251,4 @@ onMounted(async () => {
 .theme-amber{background:linear-gradient(135deg,#fffbeb 0%,#fde68a 100%)}
 .role-switcher{background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:0.75rem;font-weight:600;color:#334155}
 .role-dropdown{background:#fff;border:none;border-radius:6px;padding:4px 6px;font-size:0.75rem;font-weight:600;cursor:pointer;outline:none}
-.role-dropdown { background: #fff; border: none; border-radius: 6px; padding: 4px 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; outline: none; }
 </style>

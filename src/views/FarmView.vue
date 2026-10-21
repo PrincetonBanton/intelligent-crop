@@ -136,7 +136,16 @@ async function handleCreateFarm(formData) {
 }
 
 function handleCardClick(farm) {
-  alert('FarmViewModal ayaw kalimot edit delete');
+  const details = [
+    `🏡 Farm Entity Profile:`,
+    `- Farm Name: ${farm.name}`,
+    `- Location: ${farm.location || 'N/A'}`,
+    `- Total Hectarage: ${farm.total_hectarage || 0} Ha`,
+    `- Primary Crop: ${farm.primary_crop || 'Multi-Crop'}`,
+    `\n[FarmViewModal ayaw kalimot edit delete]`
+  ].join('\n');
+
+  alert(details);
 }
 
 onMounted(async () => { await loadCurrentUser(); await loadFarms(); });
