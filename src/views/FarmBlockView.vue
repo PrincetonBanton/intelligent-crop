@@ -55,9 +55,11 @@
             </div>
           </div>
 
-          <!-- Footer Action Hint -->
+          <!-- Footer Action Button -->
           <div class="block-footer-bar">
-            <span @click.stop="openBlockTimeline(block)" class="footer-hint">Open Timeline &rarr;</span>
+            <button @click.stop="openBlockTimeline(block)" class="btn-open-timeline" title="Open Timeline">
+              Open Timeline &rarr;
+            </button>
           </div>
         </div>
       </div>
@@ -237,9 +239,12 @@ onMounted(async () => {
 .m-label{font-size:0.6rem;font-weight:700;color:#64748b;letter-spacing:0.04em}
 .m-val{font-size:0.85rem;font-weight:700;color:#0f172a}
 .m-val small{font-size:0.7rem;font-weight:500;color:#64748b}
-.block-footer-bar{display:flex;justify-content:flex-end;margin-top:10px;border-top:1px dashed rgba(0,0,0,0.1);padding-top:6px}
-.footer-hint{font-size:0.725rem;font-weight:700;color:#16a34a;cursor:pointer}
-.footer-hint:hover{text-decoration:underline}
+.block-footer-bar{display:flex;justify-content:flex-end;margin-top:10px;border-top:1px dashed rgba(0,0,0,0.1);padding-top:8px}
+
+/* Styled Button matching the crop simulator button */
+.btn-open-timeline{background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;font-size:0.75rem;font-weight:700;padding:6px 10px;cursor:pointer;transition:all 0.2s;width:100%;text-align:center}
+.btn-open-timeline:hover{background:#bae6fd;color:#0369a1}
+
 .btn-danger-icon{position:absolute;top:10px;right:10px;background:#fff;border:1px solid #fecaca;color:#ef4444;width:24px;height:24px;border-radius:6px;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
 .btn-danger-icon:hover{background:#fee2e2;transform:scale(1.08)}
 .block-card-container:hover .btn-danger-icon{opacity:1}

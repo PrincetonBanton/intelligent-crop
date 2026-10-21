@@ -36,8 +36,8 @@
             :key="farm.id" 
             :class="['farm-profile-card', getThemeClass(index)]"
           >
-            <!-- Clickable Card Body -->
-            <div class="card-main-trigger" @click="handleCardClick(farm)">
+            <!-- Clickable Card Body to Open Edit Modal -->
+            <div class="card-main-trigger" @click="handleCardClick(farm)" title="Click to Edit Farm">
               <!-- Top Accent Banner with Title and Location -->
               <div class="card-banner">
                 <div class="banner-title-group">
@@ -59,15 +59,25 @@
               </div>
             </div>
 
-            <!-- Card Footer Link -->
-            <div class="card-footer" @click="selectedFarm = farm">
-              <span class="view-link">Explore Blocks &rarr;</span>
+            <!-- Card Footer Link with Button Style -->
+            <div class="card-footer">
+              <button @click.stop="selectedFarm = farm" class="btn-explore-blocks" title="Explore Blocks">
+                Explore Blocks
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <AddFarmModal :show="showModal" :saving="saving" @close="showModal = false" @save="handleCreateFarm" />
+      <!-- Farm Modal (Handles both Create and Update/Delete) -->
+      <FarmModal 
+        :show="showModal" 
+        :saving="saving" 
+        :farmToEdit="editingFarm"
+        @close="closeModal" 
+        @save="handleSaveFarm" 
+        @delete="handleDeleteFarm"
+      />
     </template>
 
     <!-- Drill-down view into Blocks -->
@@ -77,7 +87,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import AddFarmModal from '../components/modals/AddFarmModal.vue';
+import FarmModal from '../components/modals/FarmModal.vue';
 import FarmBlockView from './FarmBlockView.vue';
 import { farmService } from '../services/farmService.js';
 import { authService } from '../services/authService.js';
@@ -87,6 +97,7 @@ const farms = ref([]);
 const loading = ref(true);
 const saving = ref(false);
 const showModal = ref(false);
+const editingFarm = ref(null); // Holds farm object when editing
 const currentUser = ref(null);
 const testRole = ref('owner');
 const selectedFarm = ref(null);
@@ -115,6 +126,7 @@ async function onAddFarmClick() {
     alert(`Access Denied (${currentUser.value.role.toUpperCase()}): Only Owners can create farms.`);
     return;
   }
+  editingFarm.value = null; // Clear for creation mode
   showModal.value = true;
 }
 
@@ -125,27 +137,52 @@ async function loadFarms() {
   finally { loading.value = false; }
 }
 
-async function handleCreateFarm(formData) {
+async function handleSaveFarm(formData) {
   saving.value = true;
   try {
-    await farmService.createFarm(formData, currentUser.value);
-    showModal.value = false;
+    if (editingFarm.value) {
+      // Update existing farm
+      await farmService.updateFarm(editingFarm.value.id, formData);
+    } else {
+      // Create new farm
+      await farmService.createFarm(formData, currentUser.value);
+    }
+    closeModal();
     await loadFarms();
-  } catch (err) { alert('Failed to save: ' + err.message); }
-  finally { saving.value = false; }
+  } catch (err) { 
+    alert('Failed to save: ' + err.message); 
+  } finally { 
+    saving.value = false; 
+  }
+}
+
+async function handleDeleteFarm(farm) {
+  if (!confirm(`Are you sure you want to permanently delete farm "${farm.name}"?`)) return;
+  saving.value = true;
+  try {
+    await farmService.deleteFarm(farm.id);
+    closeModal();
+    await loadFarms();
+  } catch (err) {
+    alert('Failed to delete farm: ' + err.message);
+  } finally {
+    saving.value = false;
+  }
 }
 
 function handleCardClick(farm) {
-  const details = [
-    `🏡 Farm Entity Profile:`,
-    `- Farm Name: ${farm.name}`,
-    `- Location: ${farm.location || 'N/A'}`,
-    `- Total Hectarage: ${farm.total_hectarage || 0} Ha`,
-    `- Primary Crop: ${farm.primary_crop || 'Multi-Crop'}`,
-    `\n[FarmViewModal ayaw kalimot edit delete]`
-  ].join('\n');
+  if (!currentUser.value) currentUser.value = { role: testRole.value };
+  if (!permissions.hasPermission(currentUser.value.role, ROLES.OWNER) && currentUser.value.role !== ROLES.MANAGER) {
+    alert(`Access Denied (${currentUser.value.role.toUpperCase()}): Only Owners and Managers can edit farms.`);
+    return;
+  }
+  editingFarm.value = farm; // Load farm into modal for editing
+  showModal.value = true;
+}
 
-  alert(details);
+function closeModal() {
+  showModal.value = false;
+  editingFarm.value = null;
 }
 
 onMounted(async () => { await loadCurrentUser(); await loadFarms(); });
@@ -181,9 +218,11 @@ onMounted(async () => { await loadCurrentUser(); await loadFarms(); });
 .metric-item { display: flex; flex-direction: column; }
 .metric-label { font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
 .metric-value { font-size: 0.85rem; color: #1e293b; font-weight: 600; margin-top: 2px; }
-.card-footer { padding: 8px 14px; text-align: right; background: #fff; margin-top: auto; cursor: pointer; }
-.card-footer:hover .view-link { text-decoration: underline; }
-.view-link { font-size: 0.75rem; font-weight: 600; color: #16a34a; }
+
+/* Card Footer with Button styling matching the crop simulator button */
+.card-footer { padding: 8px 14px 12px; display: flex; justify-content: flex-end; align-items: center; margin-top: auto; background: #fff; }
+.btn-explore-blocks { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 6px; font-size: 0.75rem; font-weight: 700; padding: 6px 10px; cursor: pointer; transition: all 0.2s; width: 100%; text-align: center; }
+.btn-explore-blocks:hover { background: #bae6fd; color: #0369a1; }
 
 /* Color Banners */
 .theme-green .card-banner { background: #dcfce7; }

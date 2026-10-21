@@ -12,21 +12,26 @@
       </div>
 
       <div class="modal-body">
-        <!-- CARD 1: Crop Phenology Stages Ruler (Database Driven) -->
+        <!-- CARD 1: Crop Phenology Stages Ruler -->
         <div class="ruler-card-section taller-card">
           <div class="section-card-header">
             <h4>Crop Stages</h4>
-            <span v-if="loadingStages" class="loading-tag">Loading stages...</span>
+            <div class="header-right-actions">
+              <span v-if="loadingStages" class="loading-tag">Loading...</span>
+              <button @click="openAddStage" class="btn-sm-primary">+ Add Stage</button>
+            </div>
           </div>
           <div class="ruler-container">
             <div class="details-track-area stages-details">
               <div v-if="!loadingStages && cropStages.length === 0" class="no-stages-msg">
-                No stages configured for this template. Please add stages in Crop Setup.
+                No stages configured for this template. Click "+ Add Stage" above to begin.
               </div>
               <div 
                 v-for="stage in cropStages" 
                 :key="stage.id" 
-                class="stage-block"
+                class="stage-block clickable-block"
+                @click="openEditStage(stage)"
+                title="Click to Edit or Delete Stage"
                 :style="{ 
                   left: `${(stage.dafi_start / maxDays) * 100}%`, 
                   width: `${(Math.max(1, stage.dafi_end - stage.dafi_start) / maxDays) * 100}%` 
@@ -67,26 +72,25 @@
           </div>
           <div class="ruler-container">
             <div class="details-track-area sprays-details">
-              <div 
-                v-for="spray in mockSprays" 
-                :key="spray.id" 
-                class="spray-marker-pin"
-                :style="{ left: `${(spray.day / maxDays) * 100}%` }"
-              >
-                <div class="pin-badge-group">
-                  <!-- Line 1: Insecticides / Fungicides -->
-                  <span class="pin-chemical">{{ spray.chemical }} (Day {{ spray.day }})</span>
-                  <!-- Line 2: Adjuvant -->
-                  <span class="pin-adjuvant">Adjuvant: {{ spray.adjuvant }}</span>
-                  <!-- Line 3: Others / Target & Dosage -->
-                  <span class="pin-others">{{ spray.others }} | ₱{{ spray.cost }}</span>
-                </div>
-                <div class="pin-line"></div>
-              </div>
+              <div class="no-stages-msg">Hover over or click along the ruler below to inspect stage and target pests.</div>
             </div>
 
-            <!-- Main Ruler Track -->
-            <div class="ruler-track-line" @click="handleSprayRulerClick">
+            <!-- Main Ruler Track with Interactive Hover Tooltip & Click -->
+            <div 
+              class="ruler-track-line interactive-track" 
+              @click="handleSprayRulerClick"
+              @mousemove="handleSprayRulerHover"
+              @mouseleave="hoveredDay = null"
+            >
+              <!-- Floating Day Hover Tooltip Pin -->
+              <div 
+                v-if="hoveredDay !== null" 
+                class="hover-day-tooltip"
+                :style="{ left: `${hoverXPercent}%` }"
+              >
+                Day: {{ hoveredDay }}
+              </div>
+
               <div 
                 v-for="tick in rulerTicks" 
                 :key="'spray-' + tick" 
@@ -103,18 +107,28 @@
         </div>
       </div>
     </div>
+
+    <!-- Stage Add/Edit Modal -->
+    <CropStageModal 
+      :isOpen="showStageModal" 
+      :templateId="crop?.id" 
+      :stage="selectedStageForEdit" 
+      @close="showStageModal = false" 
+      @saved="fetchStagesForCrop" 
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { supabase } from '../../providers/supabaseProvider.js';
+import CropStageModal from './CropStageModal.vue';
 
 const props = defineProps({
   isOpen: Boolean,
   crop: {
     type: Object,
-    default: () => ({ crop_name: 'Durian', variety: 'Puyat', expected_cycle_duration_days: 120, trigger_type: 'DAF' })
+    default: () => ({ id: '', crop_name: 'Durian', variety: 'Puyat', expected_cycle_duration_days: 120, trigger_type: 'DAF' })
   }
 });
 
@@ -122,6 +136,13 @@ const emit = defineEmits(['close']);
 
 const cropStages = ref([]);
 const loadingStages = ref(false);
+
+const showStageModal = ref(false);
+const selectedStageForEdit = ref(null);
+
+// Hover state for Spray Ruler track
+const hoveredDay = ref(null);
+const hoverXPercent = ref(0);
 
 const maxDays = computed(() => props.crop?.expected_cycle_duration_days || 120);
 
@@ -133,7 +154,6 @@ const rulerTicks = computed(() => {
   return ticks;
 });
 
-// Fetch stage records dynamically from `public.crop_stages` table
 async function fetchStagesForCrop() {
   if (!props.crop?.id) return;
   loadingStages.value = true;
@@ -159,12 +179,15 @@ watch(() => props.isOpen, (newVal) => {
   }
 }, { immediate: true });
 
-const mockSprays = computed(() => [
-  { id: 1, day: 12, chemical: 'Copper Hydroxide (Fungicide)', adjuvant: 'Non-ionic Surfactant', others: '40g/tree', cost: 1200 },
-  { id: 2, day: 35, chemical: 'Cypermethrin (Insecticide)', adjuvant: 'Spread Sticker', others: '30ml/tree', cost: 1800 },
-  { id: 3, day: 60, chemical: 'Potassium Nitrate (Foliar)', adjuvant: 'Silicone Adjuvant', others: '60ml/tree', cost: 2500 },
-  { id: 4, day: 85, chemical: 'Systemic Fungicide', adjuvant: 'Bio-Adjuvant', others: '50ml/tree', cost: 2100 }
-]);
+function openAddStage() {
+  selectedStageForEdit.value = null;
+  showStageModal.value = true;
+}
+
+function openEditStage(stage) {
+  selectedStageForEdit.value = stage;
+  showStageModal.value = true;
+}
 
 function handleCropRulerClick(event) {
   const rect = event.currentTarget.getBoundingClientRect();
@@ -172,7 +195,17 @@ function handleCropRulerClick(event) {
   const percentage = Math.max(0, Math.min(1, clickX / rect.width));
   const calculatedDay = Math.round(percentage * maxDays.value);
   
-  alert(`Crop Stage Timeline: Day ${calculatedDay} of ${maxDays.value}`);
+  selectedStageForEdit.value = { dafi_start: calculatedDay, dafi_end: Math.min(maxDays.value, calculatedDay + 15), stage_name: '', target_pests: [] };
+  showStageModal.value = true;
+}
+
+function handleSprayRulerHover(event) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const hoverX = event.clientX - rect.left;
+  const percentage = Math.max(0, Math.min(1, hoverX / rect.width));
+  
+  hoverXPercent.value = percentage * 100;
+  hoveredDay.value = Math.round(percentage * maxDays.value);
 }
 
 function handleSprayRulerClick(event) {
@@ -181,7 +214,20 @@ function handleSprayRulerClick(event) {
   const percentage = Math.max(0, Math.min(1, clickX / rect.width));
   const calculatedDay = Math.round(percentage * maxDays.value);
   
-  alert(`Spray Interval Timeline: Day ${calculatedDay} of ${maxDays.value}`);
+  // Find which stage spans this clicked day
+  const matchedStage = cropStages.value.find(
+    stage => calculatedDay >= stage.dafi_start && calculatedDay <= stage.dafi_end
+  );
+
+  if (matchedStage) {
+    const pestsStr = matchedStage.target_pests && matchedStage.target_pests.length > 0 
+      ? matchedStage.target_pests.join(', ') 
+      : 'None specified';
+    
+    alert(`📅 Spray Interval (Day ${calculatedDay}):\n\n📌 Active Phenological Stage: ${matchedStage.stage_name} (Day ${matchedStage.dafi_start} – ${matchedStage.dafi_end})\n🐛 Target Pests: ${pestsStr}`);
+  } else {
+    alert(`📅 Spray Interval (Day ${calculatedDay}):\n\n⚠️ No active phenological stage configured for this day.`);
+  }
 }
 
 function close() {
@@ -191,7 +237,7 @@ function close() {
 
 <style scoped>
 .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px}
-.modal-card.ruler-modal{background:#fff;border-radius:12px;width:100%;max-width:100%;height:80vh;padding:24px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.15);display:flex;flex-direction:column;gap:16px;text-align:left;box-sizing:border-box;overflow:hidden}
+.modal-card.ruler-modal{background:#fff;border-radius:12px;width:100%;max-width:100%;height:85vh;padding:24px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.15);display:flex;flex-direction:column;gap:16px;text-align:left;box-sizing:border-box;overflow:hidden}
 
 .modal-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
 .header-title-group{display:flex;flex-direction:column;gap:2px}
@@ -205,28 +251,29 @@ function close() {
 .ruler-card-section.taller-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;min-height:220px}
 .section-card-header{display:flex;justify-content:space-between;align-items:center}
 .section-card-header h4{margin:0;font-size:0.85rem;color:#0f172a;font-weight:700}
+.header-right-actions{display:flex;align-items:center;gap:8px}
 .loading-tag{font-size:0.7rem;color:#64748b;font-weight:600}
+.btn-sm-primary{padding:4px 10px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer}
+.btn-sm-primary:hover{background:#15803d}
 
 .ruler-container{position:relative;padding:85px 12px 45px 12px;background:#fff;border-radius:8px;border:1px solid #f1f5f9;margin-top:auto}
 .ruler-track-line{position:relative;height:4px;background:#cbd5e1;border-radius:2px;cursor:pointer;margin:0 10px}
+.interactive-track{height:4px;top:-4px} /* Enlarged hit target for smooth hovering */
 
 .details-track-area{position:absolute;left:22px;right:22px;height:65px;top:10px}
 .no-stages-msg{font-size:0.75rem;color:#64748b;text-align:center;padding-top:18px}
 
-/* 3-Line Stage Block Layout */
-.stage-block{position:absolute;height:62px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 6px;box-sizing:border-box;gap:2px;overflow:hidden}
+/* Stage Block Styling */
+.stage-block{position:absolute;height:62px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 6px;box-sizing:border-box;gap:2px;overflow:hidden;cursor:pointer;transition:all 0.2s}
+.stage-block:hover{border-color:#16a34a;box-shadow:0 4px 12px rgba(22,163,74,0.15);transform:translateY(-1px)}
 .block-label{font-size:0.7rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center}
 .day-range-badge{background:#dcfce7;color:#166534;font-size:0.56rem;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap}
 .pest-chips-container{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
 .pest-chip{background:#f1f5f9;color:#334155;font-size:0.58rem;font-weight:600;padding:1px 4px;border-radius:3px;white-space:nowrap}
 
-/* 3-Line Spray Pin Layout (Insecticides/Fungicides, Adjuvant, Others) */
-.spray-marker-pin{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
-.pin-badge-group{background:#0f172a;color:#fff;font-size:0.62rem;padding:5px 8px;border-radius:6px;display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,0.15)}
-.pin-chemical{font-weight:700;color:#f8fafc}
-.pin-adjuvant{color:#cbd5e1;font-size:0.58rem}
-.pin-others{color:#4ade80;font-size:0.58rem;font-weight:600}
-.pin-line{width:1px;height:18px;background:#0f172a;margin-top:2px}
+/* Floating Hover Tooltip */
+.hover-day-tooltip{position:absolute;top:-28px;transform:translateX(-50%);background:#0f172a;color:#fff;font-size:0.68rem;font-weight:800;padding:2px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+.hover-day-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border-width:4px;border-style:solid;border-color:#0f172a transparent transparent transparent}
 
 .ruler-tick{position:absolute;top:8px;transform:translateX(-50%);width:1px;background:#94a3b8}
 

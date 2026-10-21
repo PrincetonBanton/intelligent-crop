@@ -28,7 +28,7 @@ export const farmService = {
     return data || [];
   },
 
-// Create a new farm entity (e.g., B1 - Baracatan)
+  // Create a new farm entity (e.g., B1 - Baracatan)
   async createFarm(farmData, userParam = null) {
     const payload = {
       name: farmData.name,
@@ -57,6 +57,29 @@ export const farmService = {
     if (error) {
       console.error('[farmService.createFarm Error]:', error);
       throw new Error(`[Insert Error] ${error.message} (Code: ${error.code})`);
+    }
+
+    return data[0];
+  },
+
+  // Update an existing farm entity
+  async updateFarm(farmId, farmData) {
+    const payload = {
+      name: farmData.name,
+      location: farmData.location,
+      total_hectarage: parseFloat(farmData.total_hectarage) || 0.00,
+      primary_crop: farmData.primary_crop || null
+    };
+
+    const { data, error } = await supabase
+      .from('farms')
+      .update(payload)
+      .eq('id', farmId)
+      .select();
+
+    if (error) {
+      console.error('[farmService.updateFarm Error]:', error);
+      throw new Error(`[Update Error] ${error.message} (Code: ${error.code})`);
     }
 
     return data[0];

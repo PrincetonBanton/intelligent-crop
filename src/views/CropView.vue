@@ -3,7 +3,6 @@
     <div class="view-header">
       <div>
         <h2>Crop Setup & Management</h2>
-        <span class="sub-subtitle">Manage baseline orchard crop templates, varieties, and phenological lifecycles.</span>
       </div>
       <div class="header-actions">
         <button @click="showAddModal = true" class="btn-primary">+ Add Crop Template</button>
@@ -56,10 +55,9 @@
 
           <!-- Card Footer Links -->
           <div class="card-footer">
-            <button @click.stop="openRulerTest(crop)" class="btn-ruler-test" title="Test 0-N Day Continuous Ruler">
-              Cycle Ruler
+            <button @click.stop="openRulerSimulator(crop)" class="btn-ruler-test" title="Open Operational Cycle Ruler Simulator">
+              Crop Cycle Simulator
             </button>
-            <span @click.stop="selectCropForStages(crop)" class="view-link">Configure Stages &rarr;</span>
           </div>
         </div>
       </div>
@@ -73,14 +71,7 @@
       @save="handleCreateTemplate" 
     />
 
-    <!-- Stages Configuration Modal -->
-    <CropStagesModal 
-      :isOpen="showStagesModal" 
-      :crop="selectedCropForConfig" 
-      @close="showStagesModal = false" 
-    />
-
-    <!-- Cycle Ruler Modal Component -->
+    <!-- Cycle Ruler Simulator Modal Component -->
     <CycleRulerModal 
       :isOpen="showRulerModal" 
       :crop="selectedCropForRuler" 
@@ -92,7 +83,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { cropService } from '../services/cropService.js';
-import CropStagesModal from '../components/modals/CropStagesModal.vue';
 import AddCropModal from '../components/modals/AddCropModal.vue';
 import CycleRulerModal from '../components/modals/CycleRulerModal.vue';
 
@@ -100,10 +90,8 @@ const templates = ref([]);
 const loading = ref(true);
 const showAddModal = ref(false);
 const saving = ref(false);
-const showStagesModal = ref(false);
-const selectedCropForConfig = ref(null);
 
-// Ruler Test Modal State
+// Cycle Ruler Simulator Modal State
 const showRulerModal = ref(false);
 const selectedCropForRuler = ref(null);
 
@@ -122,12 +110,7 @@ function showCropDetailsAlert(crop) {
   alert(details);
 }
 
-function selectCropForStages(crop) {
-  selectedCropForConfig.value = crop;
-  showStagesModal.value = true;
-}
-
-function openRulerTest(crop) {
+function openRulerSimulator(crop) {
   selectedCropForRuler.value = crop;
   showRulerModal.value = true;
 }
@@ -178,7 +161,6 @@ onMounted(() => {
 .crop-setup-view{display:flex;flex-direction:column;gap:20px;text-align:left;background:#f8fafc;padding:20px;border-radius:12px;box-sizing:border-box}
 .view-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:1px solid #e2e8f0}
 .view-header h2{margin:0;font-size:1.25rem;font-weight:700;color:#0f172a}
-.sub-subtitle{font-size:0.825rem;color:#64748b}
 
 .crop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
 .crop-profile-card{border-radius:10px;border:1px solid rgba(0,0,0,0.08);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s}
@@ -199,11 +181,9 @@ onMounted(() => {
 .trigger-badge{background:rgba(0,0,0,0.1);padding:1px 6px;border-radius:4px;font-size:0.7rem;font-weight:700}
 .desc-text{color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
 
-.card-footer{padding:6px 14px 10px;display:flex;justify-content:space-between;align-items:center;margin-top:auto}
-.btn-ruler-test{background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;font-size:0.7rem;font-weight:700;padding:4px 8px;cursor:pointer;transition:all 0.2s}
+.card-footer{padding:8px 14px 12px;display:flex;justify-content:flex-end;align-items:center;margin-top:auto}
+.btn-ruler-test{background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;font-size:0.75rem;font-weight:700;padding:6px 10px;cursor:pointer;transition:all 0.2s;width:100%;text-align:center}
 .btn-ruler-test:hover{background:#bae6fd;color:#0369a1}
-.view-link{font-size:0.75rem;font-weight:700;color:#15803d;cursor:pointer}
-.view-link:hover{text-decoration:underline}
 
 .theme-green{background:#dcfce7}
 .theme-yellow{background:#fef08a}
