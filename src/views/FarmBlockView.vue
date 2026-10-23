@@ -67,10 +67,12 @@
 
     <AddBlockModal :show="showModal" :saving="saving" @close="showModal = false" @save="handleCreateBlock" />
 
-    <!-- 3. Block Lifecycle Cycle Ruler Modal -->
-    <CycleRulerModal 
+    <!-- 3. Block Lifecycle Cycle Ruler Modal (Passing exact block, farm, and crop template) -->
+    <CycleRulerModalBlock 
       :isOpen="showTimelineModal" 
       :crop="selectedCropTemplate" 
+      :block="selectedBlock"
+      :farm="farm"
       @close="showTimelineModal = false" 
     />
   </div>
@@ -79,7 +81,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import AddBlockModal from '../components/modals/AddBlockModal.vue';
-import CycleRulerModal from '../components/modals/CycleRulerModal.vue';
+import CycleRulerModalBlock from '../components/modals/CycleRulerModalBlock.vue';
 import { blockService } from '../services/blockService.js';
 import { cropService } from '../services/cropService.js';
 import { authService } from '../services/authService.js';
@@ -98,6 +100,7 @@ const testRole = ref('owner');
 // Timeline Modal State
 const showTimelineModal = ref(false);
 const selectedCropTemplate = ref(null);
+const selectedBlock = ref(null);
 
 // 6 crop-based color themes mapped dynamically by crop name string
 const themes = ['theme-green', 'theme-yellow', 'theme-pink', 'theme-blue', 'theme-purple', 'theme-amber'];
@@ -184,6 +187,7 @@ async function openBlockTimeline(block) {
     }
 
     selectedCropTemplate.value = matchedTemplate;
+    selectedBlock.value = block;
     showTimelineModal.value = true;
   } catch (err) {
     console.error('Failed to resolve block crop template:', err);
@@ -241,7 +245,6 @@ onMounted(async () => {
 .m-val small{font-size:0.7rem;font-weight:500;color:#64748b}
 .block-footer-bar{display:flex;justify-content:flex-end;margin-top:10px;border-top:1px dashed rgba(0,0,0,0.1);padding-top:8px}
 
-/* Styled Button matching the crop simulator button */
 .btn-open-timeline{background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;font-size:0.75rem;font-weight:700;padding:6px 10px;cursor:pointer;transition:all 0.2s;width:100%;text-align:center}
 .btn-open-timeline:hover{background:#bae6fd;color:#0369a1}
 

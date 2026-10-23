@@ -26,17 +26,7 @@
               <div v-if="!loadingStages && cropStages.length === 0" class="no-stages-msg">
                 No stages configured for this template. Click "+ Add Stage" above to begin.
               </div>
-              <div 
-                v-for="stage in cropStages" 
-                :key="stage.id" 
-                class="stage-block clickable-block"
-                @click="openEditStage(stage)"
-                title="Click to Edit or Delete Stage"
-                :style="{ 
-                  left: `${(stage.dafi_start / maxDays) * 100}%`, 
-                  width: `${(Math.max(1, stage.dafi_end - stage.dafi_start) / maxDays) * 100}%` 
-                }"
-              >
+              <div v-for="stage in cropStages" :key="stage.id" class="stage-block clickable-block" @click="openEditStage(stage)" title="Click to Edit or Delete Stage" :style="{ left: `${(stage.dafi_start / maxDays) * 100}%`, width: `${(Math.max(1, stage.dafi_end - stage.dafi_start) / maxDays) * 100}%` }">
                 <!-- Line 1: Stage Name -->
                 <span class="block-label" :title="stage.stage_name">{{ stage.stage_name }}</span>
                 <!-- Line 2: Day Start & Day End -->
@@ -50,15 +40,7 @@
 
             <!-- Main Ruler Track -->
             <div class="ruler-track-line" @click="handleCropRulerClick">
-              <div 
-                v-for="tick in rulerTicks" 
-                :key="'crop-' + tick" 
-                :class="[
-                  'ruler-tick', 
-                  tick % 10 === 0 ? 'tick-ten' : tick % 5 === 0 ? 'tick-five' : 'tick-one'
-                ]"
-                :style="{ left: `${(tick / maxDays) * 100}%` }"
-              >
+              <div v-for="tick in rulerTicks" :key="'crop-' + tick" :class="['ruler-tick', tick % 10 === 0 ? 'tick-ten' : tick % 5 === 0 ? 'tick-five' : 'tick-one']" :style="{ left: `${(tick / maxDays) * 100}%` }">
                 <span class="tick-label" v-if="tick % 10 === 0">Day {{ tick }}</span>
               </div>
             </div>
@@ -76,30 +58,13 @@
             </div>
 
             <!-- Main Ruler Track with Interactive Hover Tooltip & Click -->
-            <div 
-              class="ruler-track-line interactive-track" 
-              @click="handleSprayRulerClick"
-              @mousemove="handleSprayRulerHover"
-              @mouseleave="hoveredDay = null"
-            >
+            <div class="ruler-track-line interactive-track" @click="handleSprayRulerClick" @mousemove="handleSprayRulerHover" @mouseleave="hoveredDay = null">
               <!-- Floating Day Hover Tooltip Pin -->
-              <div 
-                v-if="hoveredDay !== null" 
-                class="hover-day-tooltip"
-                :style="{ left: `${hoverXPercent}%` }"
-              >
+              <div v-if="hoveredDay !== null" class="hover-day-tooltip" :style="{ left: `${hoverXPercent}%` }">
                 Day: {{ hoveredDay }}
               </div>
 
-              <div 
-                v-for="tick in rulerTicks" 
-                :key="'spray-' + tick" 
-                :class="[
-                  'ruler-tick', 
-                  tick % 10 === 0 ? 'tick-ten' : tick % 5 === 0 ? 'tick-five' : 'tick-one'
-                ]"
-                :style="{ left: `${(tick / maxDays) * 100}%` }"
-              >
+              <div v-for="tick in rulerTicks" :key="'spray-' + tick" :class="['ruler-tick', tick % 10 === 0 ? 'tick-ten' : tick % 5 === 0 ? 'tick-five' : 'tick-one']" :style="{ left: `${(tick / maxDays) * 100}%` }">
                 <span class="tick-label" v-if="tick % 10 === 0">Day {{ tick }}</span>
               </div>
             </div>
@@ -109,13 +74,7 @@
     </div>
 
     <!-- Stage Add/Edit Modal -->
-    <CropStageModal 
-      :isOpen="showStageModal" 
-      :templateId="crop?.id" 
-      :stage="selectedStageForEdit" 
-      @close="showStageModal = false" 
-      @saved="fetchStagesForCrop" 
-    />
+    <CropStageModal :isOpen="showStageModal" :templateId="crop?.id" :stage="selectedStageForEdit" @close="showStageModal = false" @saved="fetchStagesForCrop" />
   </div>
 </template>
 
@@ -258,12 +217,11 @@ function close() {
 
 .ruler-container{position:relative;padding:85px 12px 45px 12px;background:#fff;border-radius:8px;border:1px solid #f1f5f9;margin-top:auto}
 .ruler-track-line{position:relative;height:4px;background:#cbd5e1;border-radius:2px;cursor:pointer;margin:0 10px}
-.interactive-track{height:4px;top:-4px} /* Enlarged hit target for smooth hovering */
+.interactive-track{height:4px;top:-4px}
 
 .details-track-area{position:absolute;left:22px;right:22px;height:65px;top:10px}
 .no-stages-msg{font-size:0.75rem;color:#64748b;text-align:center;padding-top:18px}
 
-/* Stage Block Styling */
 .stage-block{position:absolute;height:62px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 6px;box-sizing:border-box;gap:2px;overflow:hidden;cursor:pointer;transition:all 0.2s}
 .stage-block:hover{border-color:#16a34a;box-shadow:0 4px 12px rgba(22,163,74,0.15);transform:translateY(-1px)}
 .block-label{font-size:0.7rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center}
@@ -271,7 +229,6 @@ function close() {
 .pest-chips-container{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
 .pest-chip{background:#f1f5f9;color:#334155;font-size:0.58rem;font-weight:600;padding:1px 4px;border-radius:3px;white-space:nowrap}
 
-/* Floating Hover Tooltip */
 .hover-day-tooltip{position:absolute;top:-28px;transform:translateX(-50%);background:#0f172a;color:#fff;font-size:0.68rem;font-weight:800;padding:2px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
 .hover-day-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border-width:4px;border-style:solid;border-color:#0f172a transparent transparent transparent}
 

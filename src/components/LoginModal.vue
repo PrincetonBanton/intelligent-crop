@@ -16,7 +16,7 @@
     </form>
 
     <button type="button" @click="handleTestBypass" class="btn-secondary">
-      View Test
+      View Dashboard
     </button>
 
     <p class="toggle-text">

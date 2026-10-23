@@ -13,45 +13,23 @@
         <!-- Trade Name -->
         <div class="form-group">
           <label>Name</label>
-          <input 
-            v-model="form.tradeName" 
-            type="text" 
-            placeholder="e.g. Prevathon, Karate, Penant..." 
-            required
-            class="form-input"
-          />
+          <input v-model="form.tradeName" type="text" placeholder="e.g. Prevathon, Karate, Penant..." required class="form-input" />
         </div>
 
         <!-- Category (Default to Insecticide) -->
         <div class="form-group">
           <label>Category</label>
-          <input 
-            v-model="form.category" 
-            type="text" 
-            required
-            class="form-input"
-          />
+          <input v-model="form.category" type="text" required class="form-input" />
         </div>
 
         <!-- Active Ingredient Search / Autocomplete -->
         <div class="form-group autocomplete-container">
           <label>Active Ingredient (AI)</label>
-          <input 
-            v-model="aiSearchQuery" 
-            @focus="showDropdown = true"
-            type="text" 
-            placeholder="Type to search official active ingredient..." 
-            class="form-input"
-          />
+          <input v-model="aiSearchQuery" @focus="showDropdown = true" type="text" placeholder="Type to search official active ingredient..." class="form-input" />
           
           <!-- Dropdown Results -->
           <div v-if="showDropdown && filteredAiList.length > 0" class="autocomplete-dropdown">
-            <div 
-              v-for="(match, idx) in filteredAiList" 
-              :key="idx"
-              @click="selectActiveIngredient(match)"
-              class="autocomplete-item"
-            >
+            <div v-for="(match, idx) in filteredAiList" :key="idx" @click="selectActiveIngredient(match)" class="autocomplete-item">
               <span class="matched-ai"><strong>{{ match.ai }}</strong></span>
               <span class="match-meta">Group {{ match.item.irac_group }} ({{ match.item.sub_group }} - {{ match.item.chemical_class }})</span>
             </div>

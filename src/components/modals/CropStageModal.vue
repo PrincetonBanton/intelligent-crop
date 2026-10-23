@@ -5,56 +5,31 @@
         <h3>{{ isEditing ? 'Edit Phenological Stage' : 'Add Phenological Stage' }}</h3>
         <button @click="close" class="btn-close">✕</button>
       </div>
-      <p class="modal-desc">
-        Configure stage milestone intervals (DAFI) and target pests for this crop cycle.
-      </p>
+      <p class="modal-desc">Configure stage milestone intervals (DAFI) and target pests for this crop cycle.</p>
 
       <form @submit.prevent="handleSubmit" class="modal-form">
         <!-- Stage Name -->
         <div class="form-group">
           <label>Stage Name</label>
-          <input 
-            v-model="form.stage_name" 
-            type="text" 
-            placeholder="e.g., Flower Induction, Fruit Development" 
-            required
-            class="form-input"
-          />
+          <input v-model="form.stage_name" type="text" placeholder="e.g., Flower Induction, Fruit Development" required class="form-input" />
         </div>
 
         <!-- DAFI Start & End -->
         <div class="form-row">
           <div class="form-group">
             <label>DAFI Start (Day)</label>
-            <input 
-              v-model.number="form.dafi_start" 
-              type="number" 
-              min="0" 
-              required
-              class="form-input"
-            />
+            <input v-model.number="form.dafi_start" type="number" min="0" required class="form-input" />
           </div>
           <div class="form-group">
             <label>DAFI End (Day)</label>
-            <input 
-              v-model.number="form.dafi_end" 
-              type="number" 
-              min="0" 
-              required
-              class="form-input"
-            />
+            <input v-model.number="form.dafi_end" type="number" min="0" required class="form-input" />
           </div>
         </div>
 
         <!-- Target Pests (Comma-separated) -->
         <div class="form-group">
           <label>Target Pests / Diseases (Comma-separated)</label>
-          <input 
-            v-model="pestsInput" 
-            type="text" 
-            placeholder="e.g., Thrips, Aphids, Anthracnose" 
-            class="form-input"
-          />
+          <input v-model="pestsInput" type="text" placeholder="e.g., Thrips, Aphids, Anthracnose" class="form-input" />
         </div>
 
         <p v-if="errorMessage" class="error-msg">{{ errorMessage }}</p>
@@ -62,13 +37,7 @@
         <!-- Actions -->
         <div class="modal-actions-between">
           <div>
-            <button 
-              v-if="isEditing" 
-              type="button" 
-              @click="handleDelete" 
-              :disabled="submitting" 
-              class="btn-danger"
-            >
+            <button v-if="isEditing" type="button" @click="handleDelete" :disabled="submitting" class="btn-danger">
               Delete Stage
             </button>
           </div>
@@ -91,7 +60,7 @@ import { supabase } from '../../providers/supabaseProvider.js';
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
   templateId: { type: String, required: true },
-  stage: { type: Object, default: null } // If null, we are creating a new stage
+  stage: { type: Object, default: null }
 });
 
 const emit = defineEmits(['close', 'saved']);
